@@ -1,0 +1,1240 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Valuation Studio</title>
+<meta name="theme-color" content="#0f6e64">
+<meta name="description" content="Property valuation case register, site capture, photos and valuation engine. Works offline.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}
+#pwabar{display:flex;gap:8px;align-items:center}#pwabar .btn{padding:5px 11px;font-size:13px}</style>
+</head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: field-book workspace – top bar, form column, sticky live-value column (bottom bar on phones) */
+:root{
+  --bg:#f2f5f4;--surface:#ffffff;--soft:#e7efed;--ink:#17222c;--muted:#5a6772;--line:#d6dedc;
+  --accent:#0f6e64;--accent-ink:#ffffff;--red:#b3261e;--amber:#8f5d00;--green:#2d7438;--blue:#2b5ea7;
+  --f-disp:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;--f-body:"IBM Plex Sans","Segoe UI",Arial,sans-serif;--f-num:"IBM Plex Mono",Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1416;--surface:#162024;--soft:#1c2a2d;--ink:#e2e9e7;--muted:#95a4a8;--line:#2a383c;--accent:#4db3a5;--accent-ink:#06201d;--red:#f07167;--amber:#e3ac4c;--green:#72c482;--blue:#81a9ea;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1416;--surface:#162024;--soft:#1c2a2d;--ink:#e2e9e7;--muted:#95a4a8;--line:#2a383c;--accent:#4db3a5;--accent-ink:#06201d;--red:#f07167;--amber:#e3ac4c;--green:#72c482;--blue:#81a9ea;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{font:600 17px var(--f-disp);letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+.brand svg{width:22px;height:22px}
+#nav{display:flex;gap:4px}
+.nav{font:500 14px var(--f-body);background:none;border:0;color:var(--muted);padding:6px 10px;border-radius:var(--r);cursor:pointer}
+.nav.on{color:var(--ink);background:var(--soft)}
+.nav:disabled{opacity:.4;cursor:default}
+#savestate{margin-left:auto;font-size:12px;color:var(--muted)}#savestate[data-bad="1"]{color:var(--red)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;max-width:1240px;margin:0 auto;padding-block:20px 90px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body.has-live .layout{grid-template-columns:minmax(0,1fr) 250px}
+#view{min-width:0}
+h1{font:600 26px/1.2 var(--f-disp);margin:0;text-wrap:balance}
+h3{font:600 13px var(--f-disp);text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin:0 0 10px}
+.sub,.note{color:var(--muted);margin:4px 0 10px;font-size:13px;max-width:70ch}
+.eyebrow{font:500 12px var(--f-body);color:var(--muted);margin:0 0 4px;letter-spacing:.02em}
+.btn{font:500 14px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:var(--r);cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn.danger-ghost{color:var(--red)}
+.btn:disabled{opacity:.45;cursor:default}
+.mini{font:500 12px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:4px;padding:2px 7px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.case-row:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip{display:inline-block;font:500 11px var(--f-body);padding:2px 8px;border-radius:20px;background:var(--soft);color:var(--muted);margin-right:4px;white-space:nowrap}
+.c-blue{color:var(--blue)}.c-amber{color:var(--amber)}.c-teal{color:var(--accent)}.c-green{color:var(--green)}.c-red{color:var(--red)}.c-grey{color:var(--muted)}
+/* register */
+.reg-head,.case-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0}
+.kpi span{display:block;font-size:12px;color:var(--muted)}.kpi b{display:block;font:600 22px var(--f-num);margin:4px 0 2px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.kpi small{color:var(--muted);font-size:12px}
+.spark{width:100%;height:58px;display:block}.spark rect{fill:var(--accent)}.spark text{font:10px var(--f-body);fill:var(--muted);text-anchor:middle}.spark text.v{fill:var(--ink);font-weight:600}
+.filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.filters input{flex:1 1 220px;min-width:0}
+.fchip{font:500 13px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:5px 11px;border-radius:20px;cursor:pointer}
+.fchip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.case-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.case-row{display:grid;grid-template-columns:110px minmax(0,2fr) minmax(0,1.3fr) 130px minmax(0,1.2fr);gap:12px;align-items:center;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 14px;color:var(--ink);font:inherit;cursor:pointer;width:100%}
+.case-row:last-child{border-bottom:0}.case-row:hover{background:var(--soft)}
+.case-row small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.case-row b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cr-ref{font:500 12px var(--f-num);color:var(--muted)}.cr-val{font:600 14px var(--f-num);text-align:right;font-variant-numeric:tabular-nums}
+.cr-bank{font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{padding:32px 20px;text-align:center;color:var(--muted)}.empty b{color:var(--ink);display:block;margin-bottom:4px}.empty.ok b{color:var(--green)}
+/* case */
+.head-acts{display:flex;gap:8px;flex-wrap:wrap}
+.head-acts select{width:auto}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:18px;scrollbar-width:thin}
+.tab{font:500 14px var(--f-body);background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:9px 12px;cursor:pointer;white-space:nowrap}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+.tab i,.live-checks i{font-style:normal;font-size:11px;padding:1px 6px;border-radius:10px;background:var(--soft);margin-left:3px}
+i.red{color:var(--red)}i.amb{color:var(--amber)}i.grn{color:var(--green)}i.n{color:var(--muted)}
+.grp{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px 16px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}.fld.wide,.grid>.wide{grid-column:1/-1}
+.fld>span{font-size:12.5px;color:var(--muted);font-weight:500}.fld em{font-style:normal;opacity:.75}
+.fld small{color:var(--muted);font-size:12px}
+input,select,textarea{font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 9px;width:100%;min-width:0}
+input[data-num]{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+textarea{resize:vertical;line-height:1.5}
+.geo{flex-direction:row;align-items:center;gap:12px;flex-wrap:wrap}
+.lnk{color:var(--accent);font-weight:500}
+.confirm{background:var(--surface);border:1px solid var(--red);color:var(--ink);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.warnbox{border-color:var(--amber)}
+.tblwrap{overflow-x:auto;margin-bottom:10px}
+table.calc{border-collapse:collapse;width:100%;font-size:13px}
+table.calc th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.calc td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.calc th.r{text-align:right}
+td.num{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.num small{display:block;color:var(--red);font-family:var(--f-body)}
+td.fx{color:var(--muted);font-size:12px}
+table.trace tr.g th{color:var(--accent);font:600 12px var(--f-disp);text-transform:uppercase;letter-spacing:.07em;padding-top:12px}
+.cell{padding:4px 6px;font-size:13px;width:100%;min-width:80px}.cell.w{min-width:140px}.cell.s{min-width:56px;width:64px}
+tr.out td{opacity:.55}
+.empty-row{color:var(--muted);text-align:center}
+.stats{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);align-items:flex-end}
+.stats span{display:block;font-size:12px;color:var(--muted)}.stats b{font:600 16px var(--f-num)}.stats b.red{color:var(--red)}
+.stats .sug{margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.valtop{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px}.valtop>div{flex:1 1 150px}.valtop>.big{flex:2 1 300px}
+.valtop>div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0}
+.valtop span{display:block;font-size:12px;color:var(--muted)}.valtop b{display:block;font:600 18px var(--f-num);margin-top:2px;overflow-wrap:anywhere}
+.valtop .big{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.valtop .big span,.valtop .big small{color:inherit;opacity:.85}.valtop .big b{font-size:26px}
+.valtop small{display:block;font-size:12px;color:var(--muted)}
+ul.checks{list-style:none;padding:0;margin:0}ul.checks li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0 8px 12px;border-bottom:1px solid var(--line);border-left:3px solid var(--line)}
+ul.checks li.error{border-left-color:var(--red)}ul.checks li.warn{border-left-color:var(--amber)}ul.checks li.info{border-left-color:var(--blue)}
+.ph-add{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.busy{font-size:13px;color:var(--muted)}
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.ph{margin:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--bg)}
+.ph-img{aspect-ratio:4/3;background:var(--soft);display:flex;align-items:center;justify-content:center;max-width:100%}
+.ph-img img{max-width:100%;max-height:100%;object-fit:contain}
+.ph figcaption{padding:8px;display:flex;flex-direction:column;gap:6px}.ph figcaption small{color:var(--muted);font-size:11.5px}
+.ph-acts{display:flex;gap:4px}
+.out .btn{margin-top:4px}details{margin-top:10px;font-size:13px}summary{cursor:pointer;color:var(--muted)}
+/* live value column */
+#live{position:sticky;top:76px;align-self:start;min-width:0}
+.live-in{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:8px}
+.live-in .lbl{font-size:12px;color:var(--muted)}.live-in .sheet{font-family:var(--f-num)}
+.fmv{font:600 24px var(--f-num);color:var(--accent);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.live-in dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:4px 0;font-size:13px}.live-in dt{color:var(--muted)}.live-in dd{margin:0;text-align:right;font-family:var(--f-num)}
+.live-checks{background:none;border:0;padding:0;text-align:left;cursor:pointer;display:flex;flex-wrap:wrap;gap:4px}
+@media (max-width:1060px){
+  body.has-live .layout{grid-template-columns:minmax(0,1fr)}
+  #live{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:6;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .live-in{border-radius:0;border-width:1px 0 0;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 14px;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .live-in dl,.live-in .sheet{display:none}.fmv{font-size:18px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .case-row{grid-template-columns:minmax(0,1fr) auto;row-gap:2px}
+  .cr-ref{grid-column:1/-1}.cr-bank{grid-column:1}.cr-val{grid-row:2;grid-column:2}.cr-st{grid-column:1/-1}
+  h1{font-size:22px}
+  .stats .sug{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+<div class="top"><div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 20V9l7-5 7 5v11" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>Valuation Studio</div><nav id="nav"></nav><span id="savestate"></span></div>
+<div class="layout"><main id="view"></main><aside id="live" hidden></aside></div>
+<script>window.VS_SPEC = {"fields":[{"key":"inspect_date","label":"Date of inspection","type":"date","section":"case","options":null,"rows":{"IOB-LB":[21],"IOB-FL":[240],"BOM-LB":[426],"BOM-FL":[664]}},{"key":"purpose","label":"Purpose of valuation","type":"text","section":"case","options":null,"rows":{"IOB-LB":[20],"IOB-FL":[239],"BOM-LB":[425],"BOM-FL":[662],"PNB-FL":[1525],"TAX":[1683]}},{"key":"owner","label":"Owner(s)","type":"text","section":"party","options":null,"rows":{"IOB-LB":[29],"IOB-FL":[248],"BOM-LB":[434],"BOM-FL":[671],"CAN-LB":[846],"CAN-FL":[1110],"PNB-LB":[1310],"PNB-FL":[1534],"TAX":[1686]}},{"key":"owner_addr","label":"Owner address / phone","type":"text","section":"party","options":null,"rows":{"IOB-LB":[30],"IOB-FL":[249],"BOM-LB":[435],"BOM-FL":[672],"CAN-LB":[847],"PNB-FL":[1535]}},{"key":"borrower","label":"Borrower(s)","type":"text","section":"party","options":null,"rows":{"IOB-LB":[33],"IOB-FL":[254],"BOM-LB":[438],"CAN-LB":[850],"BOM-FL":[675],"PNB-FL":[1537]}},{"key":"plot_no","label":"Plot no.","type":"text","section":"loc","options":null,"rows":{"IOB-LB":[39],"IOB-FL":[265],"BOM-LB":[445],"BOM-FL":[685],"CAN-LB":[872],"PNB-FL":[1545]}},{"key":"survey_no","label":"Survey / Khasra no.","type":"text","section":"loc","options":null,"rows":{"IOB-LB":[43],"IOB-FL":[271],"BOM-LB":[450],"CAN-LB":[877],"BOM-FL":[691],"CAN-FL":[1130],"PNB-FL":[1549]}},{"key":"house_no","label":"House / property no.","type":"text","section":"loc","options":null,"rows":{"IOB-LB":[45],"IOB-FL":[273],"BOM-LB":[452],"BOM-FL":[693],"CAN-LB":[879],"CAN-FL":[1132],"PNB-FL":[1550],"TAX":[1710]}},{"key":"locality","label":"Locality / layout","type":"text","section":"loc","options":null,"rows":{"IOB-LB":[48],"IOB-FL":[277],"BOM-LB":[455],"BOM-FL":[697],"CAN-LB":[882],"CAN-FL":[1135],"PNB-FL":[1553],"TAX":[1697]}},{"key":"town","label":"Village / town / city","type":"text","section":"loc","options":null,"rows":{"IOB-LB":[49],"IOB-FL":[278],"BOM-LB":[456],"BOM-FL":[698],"CAN-LB":[883],"CAN-FL":[1136],"PNB-FL":[1554],"TAX":[1698]}},{"key":"district","label":"District","type":"district","section":"loc","options":null,"rows":{"IOB-LB":[51],"IOB-FL":[280],"BOM-LB":[458],"BOM-FL":[700],"CAN-LB":[885],"CAN-FL":[1138],"PNB-FL":[1556],"TAX":[1700]}},{"key":"area_use","label":"Area \u2013 residential / commercial / industrial","type":"select","section":"loc","options":["residential","commercial","resi. + commercial","industrial","agricultural land(s)","recent layout","un-occupied layout","not applicable"],"rows":{"IOB-LB":[55],"IOB-FL":[284],"BOM-LB":[462],"BOM-FL":[704],"CAN-LB":[863],"CAN-FL":[1146],"PNB-FL":[1564]}},{"key":"loc_class","label":"Class of locality","type":"select","section":"loc","options":["higher class","middle class","lower-middle class","poor class","slum area","aristocratic class","recent layout","un-occupied layout"],"rows":{"IOB-LB":[56],"IOB-FL":[285],"BOM-LB":[463],"BOM-FL":[705],"CAN-FL":[1147],"PNB-FL":[1566]}},{"key":"local_body","label":"Local body","type":"select","section":"loc","options":["Gram Panchayat","Nagar Panchayat","Municipal Council","Municipal Corporation"],"rows":{"IOB-LB":[57],"IOB-FL":[286],"BOM-LB":[464],"BOM-FL":[706],"CAN-LB":[865],"CAN-FL":[1148],"PNB-FL":[1568]}},{"key":"bN","label":"Boundary \u2013 North (as per deed)","type":"text","section":"bnd","options":null,"rows":{"IOB-LB":[63],"IOB-FL":[289],"BOM-LB":[470],"BOM-FL":[709],"CAN-LB":[888],"CAN-FL":[1150],"PNB-LB":[1347],"PNB-FL":[1570],"TAX":[1713]}},{"key":"bS","label":"Boundary \u2013 South (as per deed)","type":"text","section":"bnd","options":null,"rows":{"IOB-LB":[65],"IOB-FL":[291],"BOM-LB":[472],"BOM-FL":[711],"CAN-LB":[890],"CAN-FL":[1151],"PNB-LB":[1364],"PNB-FL":[1572],"TAX":[1715]}},{"key":"bE","label":"Boundary \u2013 East (as per deed)","type":"text","section":"bnd","options":null,"rows":{"IOB-LB":[67],"IOB-FL":[293],"BOM-LB":[474],"BOM-FL":[713],"CAN-LB":[892],"CAN-FL":[1152],"PNB-LB":[1353],"PNB-FL":[1574],"TAX":[1717]}},{"key":"bW","label":"Boundary \u2013 West (as per deed)","type":"text","section":"bnd","options":null,"rows":{"IOB-LB":[69],"IOB-FL":[295],"BOM-LB":[476],"BOM-FL":[715],"CAN-LB":[894],"CAN-FL":[1153],"PNB-LB":[1366],"PNB-FL":[1576],"TAX":[1719]}},{"key":"tenant","label":"Occupied by tenant?","type":"select","section":"loc","options":["yes;","no"],"rows":{"IOB-LB":[99],"IOB-FL":[310],"BOM-LB":[505],"BOM-FL":[730],"CAN-FL":[1171],"PNB-LB":[1317],"PNB-FL":[1597]}},{"key":"freehold","label":"Free-hold / lease-hold","type":"select","section":"loc","options":["free-hold","lease-hold"],"rows":{"IOB-LB":[128],"IOB-FL":[316],"BOM-LB":[534],"BOM-FL":[736],"CAN-FL":[1177]}},{"key":"dimN","label":"Frontage / North side (m)","type":"num","section":"land","options":null,"rows":{"IOB-LB":[84],"BOM-LB":[490],"CAN-LB":[927],"CAN-FL":[1154],"PNB-LB":[1363],"PNB-FL":[1586],"TAX":[1737]}},{"key":"dimE","label":"Depth / East side (m)","type":"num","section":"land","options":null,"rows":{"IOB-LB":[90],"BOM-LB":[496],"CAN-LB":[933],"CAN-FL":[1160],"PNB-LB":[1365],"PNB-FL":[1589],"TAX":[1743]}},{"key":"extent","label":"Plot area considered (sqm)","type":"num","section":"land","options":null,"rows":{"IOB-LB":[96],"IOB-FL":[306],"BOM-FL":[726],"PNB-FL":[1593],"BOM-LB":[502],"CAN-LB":[941],"PNB-LB":[1335],"TAX":[1735]}},{"key":"development","label":"Development of surroundings","type":"select","section":"land","options":["well-developed","un-developed","developing","recent layout","agricultural land"],"rows":{"IOB-LB":[104],"BOM-LB":[510],"CAN-LB":[946],"PNB-LB":[1340]}},{"key":"level","label":"Level of land","type":"select","section":"land","options":["level","undulating","sloping"],"rows":{"IOB-LB":[109],"BOM-LB":[515],"CAN-LB":[951]}},{"key":"shape","label":"Shape of land","type":"select","section":"land","options":["square","almost square","rectangular","almost rectangular","trapezoidal","irregular"],"rows":{"IOB-LB":[110],"BOM-LB":[516],"CAN-LB":[952]}},{"key":"approved_layout","label":"In approved layout?","type":"select","section":"land","options":["yes;","no;"],"rows":{"IOB-LB":[113],"IOB-FL":[314],"BOM-FL":[734],"CAN-LB":[955]}},{"key":"corner","label":"Corner / intermittent plot","type":"select","section":"land","options":["corner plot","intermittant plot","not applicable"],"rows":{"IOB-LB":[115],"BOM-LB":[521],"CAN-LB":[957]}},{"key":"road_type","label":"Type of road","type":"select","section":"land","options":["kachcha road","wbm road","black-topped/tarred road","concrete road"],"rows":{"IOB-LB":[117],"BOM-LB":[523]}},{"key":"road_width","label":"Road width (m)","type":"num","section":"land","options":null,"rows":{"IOB-LB":[118],"BOM-LB":[524]}},{"key":"water","label":"Water potentiality","type":"select","section":"land","options":["available","not available","easily available"],"rows":{"IOB-LB":[120],"BOM-LB":[526]}},{"key":"sewer","label":"Underground sewerage","type":"select","section":"land","options":["available","not available","easily available"],"rows":{"IOB-LB":[121],"BOM-LB":[527],"CAN-LB":[959]}},{"key":"power","label":"Power supply","type":"select","section":"land","options":["available","not available","easily available"],"rows":{"IOB-LB":[122],"BOM-LB":[528],"CAN-LB":[960]}},{"key":"pmr","label":"Prevailing market rate (Rs/sqft)","type":"num","section":"rate","options":null,"rows":{"IOB-LB":[132],"BOM-LB":[540],"CAN-LB":[969],"PNB-LB":[1488],"TAX":[1792]}},{"key":"adopted","label":"Adopted land rate (Rs/sqft)","type":"num","section":"rate","options":null,"rows":{"IOB-LB":[134],"PNB-LB":[1489],"BOM-LB":[544]}},{"key":"glr_land","label":"Guideline (RR) land rate (Rs/sqm)","type":"num","section":"rate","options":null,"rows":{"IOB-LB":[133],"IOB-FL":[390],"BOM-FL":[808],"BOM-LB":[542],"CAN-LB":[967],"PNB-LB":[1518],"TAX":[1793]}},{"key":"tech","label":"Building status","type":"select","section":"bldg","options":["under construction","vacant plot; hence not applicable"],"rows":{"IOB-LB":[135],"BOM-LB":[545],"TAX":[1795]}},{"key":"bldg_type","label":"Type of building","type":"select","section":"bldg","options":["residential","commercial","resi. + commercial","industrial","educational","institutional","religious"],"rows":{"IOB-LB":[136],"BOM-LB":[546],"CAN-LB":[972],"PNB-LB":[1372],"TAX":[1796]}},{"key":"construction","label":"Type of construction","type":"select","section":"bldg","options":["load-bearing structure","rcc framed structure","partly framed structure","steel structure","rcc+steel structure","load bearing structure with CGI sheets","load bearing structure with precoated GI sheets","load bearing structure with AC sheets"],"rows":{"IOB-LB":[137],"IOB-FL":[341],"BOM-FL":[761],"CAN-FL":[1211],"PNB-FL":[1605],"BOM-LB":[547],"CAN-LB":[973],"TAX":[1797]}},{"key":"year","label":"Year of construction","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[138],"IOB-FL":[339],"BOM-LB":[548],"CAN-LB":[985],"PNB-LB":[1376],"BOM-FL":[759],"CAN-FL":[1208],"PNB-FL":[1603]}},{"key":"upper_floors","label":"Floors above ground","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[140],"PNB-LB":[1375],"BOM-LB":[550],"CAN-LB":[979],"TAX":[1800]}},{"key":"bsmt_area","label":"Basement area (sqm)","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[143],"BOM-LB":[553],"TAX":[1802],"PNB-LB":[1377],"CAN-LB":[983]}},{"key":"gf_area","label":"Ground floor area (sqm)","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[145],"BOM-LB":[555],"CAN-LB":[986],"PNB-LB":[1379],"TAX":[1804]}},{"key":"ff_area","label":"First floor area (sqm)","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[151],"BOM-LB":[561],"TAX":[1810],"PNB-LB":[1385],"CAN-LB":[990]}},{"key":"sf_area","label":"Second floor area (sqm)","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[154],"BOM-LB":[564],"TAX":[1813],"PNB-LB":[1388],"CAN-LB":[992]}},{"key":"tf_area","label":"Third floor area (sqm)","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[157],"BOM-LB":[567],"TAX":[1816],"PNB-LB":[1391]}},{"key":"gf_rate","label":"Ground floor construction rate (Rs/sqft)","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[190],"BOM-LB":[616],"CAN-LB":[1028],"PNB-LB":[1500],"TAX":[1828]}},{"key":"bsmt_rate","label":"Basement rate (derived)","type":"derived","section":"bldg","options":null,"rows":{"PNB-LB":[1499]}},{"key":"ff_rate","label":"First floor rate (derived)","type":"derived","section":"bldg","options":null,"rows":{"PNB-LB":[1502]}},{"key":"sf_rate","label":"Second floor rate (derived)","type":"derived","section":"bldg","options":null,"rows":{"PNB-LB":[1503]}},{"key":"age","label":"Age of building (derived)","type":"derived","section":"flat","options":null,"rows":{"PNB-FL":[1653]}},{"key":"year_commence","label":"Year construction started (derived)","type":"derived","section":"bldg","options":null,"rows":{"TAX":[1787]}},{"key":"glr_bldg","label":"Guideline (RR) building rate (Rs/sqm)","type":"num","section":"bldg","options":null,"rows":{"IOB-LB":[168],"BOM-LB":[582],"CAN-LB":[1000],"PNB-LB":[1519],"TAX":[1824]}},{"key":"condition","label":"Condition of building","type":"select","section":"bldg","options":["sound","under construction","work completed upto","well-maintained","poorly maintained","needs maitenance","needs rennovation","dilapidated","distressed","obsolete","incomplete"],"rows":{"IOB-LB":[159],"BOM-LB":[569],"TAX":[1818]}},{"key":"permission","label":"Building permission details","type":"text","section":"bldg","options":null,"rows":{"IOB-LB":[164],"IOB-FL":[353],"BOM-LB":[577],"BOM-FL":[773]}},{"key":"stage","label":"Work completed (%) \u2013 under construction","type":"pct","section":"bldg","options":null,"rows":{"IOB-LB":[222],"BOM-LB":[649],"CAN-LB":[1081]}},{"key":"x_portico","label":"Portico","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[198],"BOM-LB":[624],"CAN-LB":[1031]}},{"key":"x_door","label":"Ornamental front door","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[199],"BOM-LB":[625]}},{"key":"x_verandah","label":"Sit-out / verandah with grills","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[200],"BOM-LB":[626],"CAN-LB":[1033]}},{"key":"x_ohtank","label":"Overhead water tank","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[201],"BOM-LB":[627],"CAN-LB":[1056]}},{"key":"x_gates","label":"Extra steel / collapsible gates","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[202],"BOM-LB":[628],"CAN-LB":[1034]}},{"key":"x_wardrobe","label":"Wardrobes","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[203],"IOB-FL":[398],"BOM-LB":[629],"BOM-FL":[817],"CAN-FL":[1267],"PNB-FL":[1656]}},{"key":"x_interior","label":"Interior decoration","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[207],"PNB-LB":[1508],"IOB-FL":[406],"BOM-LB":[633],"BOM-FL":[825],"CAN-LB":[1040],"CAN-FL":[1275],"PNB-FL":[1664]}},{"key":"x_rest","label":"Other extra items (derived)","type":"derived","section":"extra","options":null,"rows":{"PNB-LB":[1510],"TAX":[1835]}},{"key":"x_watersupply","label":"Water supply arrangements","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[217],"PNB-LB":[1506],"BOM-LB":[643]}},{"key":"x_drainage","label":"Drainage arrangements","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[218],"BOM-LB":[645]}},{"key":"x_compound","label":"Compound wall","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[219],"PNB-LB":[1505],"BOM-LB":[593,646],"CAN-LB":[1059]}},{"key":"x_pavement","label":"Pavement","type":"amt","section":"extra","options":null,"rows":{"IOB-LB":[221],"BOM-LB":[648]}},{"key":"flat_no","label":"Flat / unit no.","type":"text","section":"flat","options":null,"rows":{"IOB-FL":[261],"PNB-FL":[1542]}},{"key":"flat_floor","label":"Floor of the flat","type":"text","section":"flat","options":null,"rows":{"IOB-FL":[356],"BOM-FL":[776],"PNB-FL":[1617]}},{"key":"bldg_floors","label":"Number of floors in building","type":"text","section":"flat","options":null,"rows":{"IOB-FL":[340],"BOM-FL":[760],"PNB-FL":[1604]}},{"key":"units","label":"Dwelling units in building","type":"text","section":"flat","options":null,"rows":{"IOB-FL":[342],"BOM-FL":[762],"CAN-FL":[1212],"PNB-FL":[1606]}},{"key":"lift","label":"Lift","type":"select","section":"flat","options":["yes","no","under installation","building under construction"],"rows":{"IOB-FL":[347],"BOM-FL":[767],"PNB-FL":[1611]}},{"key":"parking","label":"Car parking","type":"select","section":"flat","options":["yes","no","under construction","building under construction"],"rows":{"IOB-FL":[350],"BOM-FL":[770],"CAN-FL":[1219],"PNB-FL":[1614]}},{"key":"undivided","label":"Undivided share of land (sqm or fraction)","type":"text","section":"flat","options":null,"rows":{"IOB-FL":[375],"BOM-FL":[794],"CAN-FL":[1236],"PNB-FL":[1635]}},{"key":"bua","label":"Built-up area of flat (sqm)","type":"num","section":"flat","options":null,"rows":{"IOB-FL":[376],"BOM-FL":[795],"CAN-FL":[1237],"PNB-FL":[1637]}},{"key":"comp_rate","label":"Composite rate, new (Rs/sqft)","type":"num","section":"flat","options":null,"rows":{"IOB-FL":[385],"BOM-FL":[804],"CAN-FL":[1261],"PNB-FL":[1646]}},{"key":"bldg_rate","label":"Building + services component (Rs/sqft)","type":"num","section":"flat","options":null,"rows":{"IOB-FL":[388],"BOM-FL":[807],"CAN-FL":[1263],"PNB-FL":[1650]}},{"key":"glr_flat","label":"Guideline (RR) flat rate (Rs/sqm)","type":"num","section":"flat","options":null,"rows":{"IOB-FL":[391],"BOM-FL":[809],"BOM-LB":[543]}},{"key":"marketability","label":"Marketability","type":"select","section":"flat","options":["excellent","superior","good","average","poor"],"rows":{"IOB-FL":[382],"BOM-FL":[801],"CAN-FL":[1258],"PNB-FL":[1643]}}],"blocks":["IOB-LB","IOB-FL","BOM-LB","BOM-FL","CAN-LB","CAN-FL","PNB-LB","PNB-FL","TAX"],"districts":{"Yavatmal":["Arni","Babhulgaon","Darwha","Digras","Ghatanji","Kalamb","Kelapur","Mahagaon","Maregaon","Ner","Pusad","Ralegaon","Umarkhed","Wani","Yavatmal","Zari_Jamni"],"Chandrapur":["Ballarpur","Bhadravati","Brahmapuri","Chandrapur","Chimur","Gondpipri","Jiwati","Korpana","Mul","Nagbhid","Pombhurna","Rajura","Sawali","Sindewahi","Warora"],"Nagpur":["Bhiwapur","Hingna","Kalmeshwar","Kamptee","Katol","Kuhi","Mauda","Nagpur_rural","Nagpur","Narkhed","Parseoni","Ramtek","Saoner","Umred"],"Wardha":["Arvi","Ashti","Deaoli","Hinganghat","Karanja","Samudrapur","Seloo","Wardha"],"Bhandara":["Bhandara","Lakhandur","Lakhni","Mohadi","Pauni","Sakoli","Tumsar"],"Gondia":["Amgaon","Arjuni_Morgaon","Deori","Gondia","Goregaon","Sadak_Arjuni","Salekasa","Tiroda"],"Gadchiroli":["Aheri","Armori","Bhamragad","Chamorshi","Desaiganj","Dhanora","Etapalli","Gadchiroli","Korchi","Kurkheda","Mulchera","Sironcha"],"Amravati":["Achalpur","Amravati","Anjangaon_Surji","Bhatkuli","Chandur_Railway","Chandur_Bazar","Chikhaldara","Daryapur","Dhamangaon_Rly","Dharni","Morshi","Nandgaon_Khandeshwar","Tiwsa","Warud"],"Akola":["Akola","Akot","Balapur","Barshi_Takli","Murtijapur","Patur","Telhara"],"Buldana":["Buldana","Chikhli","Deulgaon_Raja","Jalgaon","Khamgaon","Lonar","Malkapur","Mehakar","Motala","Nandura","Sangrampur","Shegaon","Sindkhed_Raja"],"Washim":["Karanja","Malegaon","Mangrul_Pir","Manora","Risod","Washim"]},"report_cells":{"IOB-LB":{"fmv":"J262","rv":"E273","fsv":"M275","gv":"M277"},"IOB-LB-UC":{"fmv_now":"J262","fmv":"N262"},"BOM-LB":{"fmv":"J263","rv":"E272","fsv":"M273","gv":"M275"},"BOM-LB-UC":{"fmv_now":"J265","fmv":"N265"},"CAN-LB":{"fmv_now":"N316","fmv":"B329"},"PNB-LB":{"fmv":"H280","rv":"H281","fsv":"H282","gv":"H291"},"CBDT":{"fmv":"J210"},"IOB-FL":{"fmv":"O219","rv":"E227","fsv":"B229","gv":"M230"},"IOB-FL-UC":{"fmv":"O217"},"BOM-FL":{"fmv":"O218","rv":"E226","fsv":"N227"},"BOM-FL-UC":{"fmv":"O220"},"CAN-FL":{"fmv":"N266"},"PNB-FL":{"fmv":"O173","rv":"J186","fsv":"J187"}},"selectors":{"bank":"C4","ptype":"C5","status":"C6","format":"C7"}};</script>
+<script>/* ===== Valuation Studio – calculation engine (pure, no DOM) ===== */
+const VS = (typeof window !== 'undefined' ? (window.VS = window.VS || {}) : {});
+
+VS.BANKS = [
+  ['Indian Overseas Bank', 'IOB'], ['Union Bank of India', 'IOB'], ['Bank of Baroda', 'IOB'], ['Central Bank of India', 'IOB'],
+  ['Maharashtra Gramin Bank', 'IOB'], ['IDBI Bank', 'IOB'], ['Bank of India', 'IOB'], ['Bank of Maharashtra', 'BOM'],
+  ['State Bank of India', 'BOM'], ['UCO Bank', 'BOM'], ['Canara Bank', 'CAN'], ['Punjab National Bank', 'PNB'],
+  ['Income Tax - CBDT format', 'CBDT'], ['Capital Gains - FMV as on 01.04.2001', 'CAPG']];
+VS.PTYPES = ['Land + Building', 'Vacant Land / Plot', 'Flat / Shop / Office'];
+VS.CSTATUS = ['Completed / existing', 'Under construction'];
+VS.FORMATS = ['Auto', 'IOB', 'BOM', 'CAN', 'PNB', 'CBDT', 'CAPG'];
+VS.FORMAT_NAMES = { IOB: 'IOB group format', BOM: 'BOM / SBI / UCO format', CAN: 'Canara format', PNB: 'PNB format', CBDT: 'Income Tax (CBDT) format', CAPG: 'Capital Gains (2001) format' };
+VS.DEFAULT_RULES = { rv: 0.90, fsv: 0.80, life: 50, salv: 0.10, rnd: 1000, f1: 0.75, f2: 1.10, sbua: 1.20, carp: 0.80, cant: 0.50, ladj: 0.80, esc: 6, fsiMax: 1.1, photoKB: 150, photoPx: 1280, stamp: true, autofix: true };
+
+VS.num = v => { if (v === null || v === undefined || v === '') return 0; const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/,/g, '')); return isFinite(n) ? n : 0; };
+VS.has = v => v !== null && v !== undefined && String(v).trim() !== '';
+VS.mround = (x, m) => { if (!m) return x; const s = x < 0 ? -1 : 1; return s * Math.round(Math.abs(x) / m + 1e-9) * m; };
+VS.round = x => Math.round(x + (x >= 0 ? 1e-9 : -1e-9));
+
+VS.format = c => {
+  const fam = c.fmtOverride && c.fmtOverride !== 'Auto' ? c.fmtOverride : ((VS.BANKS.find(b => b[0] === c.bank) || [0, 'IOB'])[1]);
+  const isFlat = c.ptype === 'Flat / Shop / Office';
+  const tax = fam === 'CBDT' || fam === 'CAPG';
+  const uc = c.cstatus === 'Under construction';
+  const sheet = tax ? fam : fam + '-' + (isFlat ? 'FL' : 'LB') + (uc && (fam === 'IOB' || fam === 'BOM') ? '-UC' : '');
+  const block = tax ? 'TAX' : fam + '-' + (isFlat ? 'FL' : 'LB');
+  return { fam, isFlat: isFlat && !tax, tax, uc, vacant: c.ptype === 'Vacant Land / Plot', sheet, block };
+};
+
+VS.ageOf = (year, valDate) => {
+  const y = VS.num(year); if (!y) return 0;
+  const vy = valDate ? new Date(valDate).getFullYear() : new Date().getFullYear();
+  return y > 200 ? vy - y : y;
+};
+
+VS.depFactor = age => age > 60 ? .3 : age > 50 ? .4 : age > 40 ? .5 : age > 30 ? .6 : age > 20 ? .7 : age > 10 ? .8 : age > 5 ? .9 : age > 2 ? .95 : 1;
+
+/* effective floor areas (sqm) and rates (Rs/sqft) as the bank formats apply them */
+VS.floors = (f, S) => {
+  const n = VS.num, up = n(f.upper_floors), gf = n(f.gf_area);
+  const area = {
+    bsmt: n(f.bsmt_area), gf,
+    ff: VS.has(f.ff_area) ? n(f.ff_area) : (up >= 1 ? gf : 0),
+    sf: VS.has(f.sf_area) ? n(f.sf_area) : (up > 1 ? gf : 0),
+    tf: VS.has(f.tf_area) ? n(f.tf_area) : (up > 2 ? gf : 0)
+  };
+  const r = n(f.gf_rate);
+  const ff = VS.mround(r * S.f1, 100), sf = VS.mround(ff * S.f2, 100), tf = VS.mround(sf * S.f2, 100);
+  const rate = { bsmt: VS.mround(r * S.f1, 100), gf: r, ff, sf, tf };
+  return { area, rate };
+};
+
+VS.compute = (c, Sin) => {
+  const S = Object.assign({}, VS.DEFAULT_RULES, Sin || {});
+  const F = VS.format(c), f = c.f || {}, n = VS.num;
+  const L = []; // calculation trace
+  const add = (group, label, formula, value, unit) => L.push({ group, label, formula, value, unit: unit || '' });
+  const res = { fmt: F, lines: L, S, checks: {} };
+  const ext = n(f.extent);
+  if (!F.isFlat) {
+    const conv = (F.fam === 'CAN' || F.fam === 'PNB') ? 10.7636 : 10.76;
+    const ladjFmt = F.fam === 'CAN' || F.fam === 'CBDT';
+    const rate = ladjFmt ? n(f.pmr) * S.ladj : (VS.has(f.adopted) ? n(f.adopted) : n(f.pmr));
+    const sqft = ext * conv;
+    let land = sqft * rate;
+    if (F.fam === 'PNB') land = VS.mround(land, S.rnd);
+    add('Land', 'Plot area', `${fmtN(ext, 2)} sqm × ${conv}`, sqft, 'sqft');
+    add('Land', ladjFmt ? `Adopted rate (${Math.round(S.ladj * 100)}% of prevailing rate, as this format applies)` : 'Adopted land rate', ladjFmt ? `${fmtN(n(f.pmr))} × ${S.ladj}` : '', rate, 'Rs/sqft');
+    add('Land', 'Value of land', `${fmtN(sqft, 2)} × ${fmtN(rate, 2)}`, land, 'Rs');
+    let repl = 0, dep = 0, bldg = 0, age = 0;
+    const fl = VS.floors(f, S);
+    if (!F.vacant) {
+      const names = { bsmt: 'Basement', gf: 'Ground floor', ff: 'First floor', sf: 'Second floor', tf: 'Third floor' };
+      for (const k of ['bsmt', 'gf', 'ff', 'sf', 'tf']) {
+        if (F.fam === 'PNB' && k === 'tf') continue;
+        const a = fl.area[k]; if (!a) continue;
+        const sq = a * 10.76; const r = fl.rate[k];
+        const v = F.fam === 'PNB' ? sq * r : VS.round(sq * r);
+        repl += v;
+        add('Building', names[k], `${fmtN(a, 2)} sqm = ${fmtN(sq, 2)} sqft × Rs ${fmtN(r)}`, v, 'Rs');
+      }
+      add('Building', 'Replacement cost', 'sum of floors', repl, 'Rs');
+      age = F.uc ? 0 : VS.ageOf(f.year, c.valDate);
+      res.age = age;
+      const frac = Math.min(1, age / S.life);
+      if (age > 2) dep = repl * (1 - S.salv) * frac;
+      if (F.fam === 'PNB' && age > 2) dep = VS.mround(dep, S.rnd);
+      add('Building', 'Depreciation', age > 2 ? `${fmtN(repl)} × ${(1 - S.salv)} × min(1, ${age}/${S.life})` : `age ${age} yrs – not depreciated`, dep, 'Rs');
+      bldg = repl - dep;
+      add('Building', 'Depreciated value of building', '', bldg, 'Rs');
+    }
+    const spec = VS.SPEC || (typeof window !== 'undefined' && window.VS_SPEC) || null;
+    const rowsIn = k => { if (!spec) return true; const fd = spec.fields.find(x => x.key === k); return !!(fd && fd.rows[F.block] && fd.rows[F.block].length); };
+    const restOK = spec ? rowsIn('x_rest') : true;
+    let extras = 0; const unplaced = [];
+    for (const k of Object.keys(f)) {
+      if (!k.startsWith('x_') || k === 'x_rest' || !n(f[k])) continue;
+      if (rowsIn(k) || restOK) extras += n(f[k]); else unplaced.push(k);
+    }
+    res.unplacedExtras = unplaced;
+    if (extras) add('Extras', 'Extra items, amenities & services', 'as entered', extras, 'Rs');
+    const stage = F.uc ? Math.min(1, n(f.stage) / 100) : 1;
+    let total = land + bldg + extras;
+    res.fmv = VS.mround(total, S.rnd);
+    if (F.uc) {
+      const now = F.fam === 'CAN' ? land + bldg * stage + extras : land + bldg * stage;
+      res.fmvNow = VS.mround(now, S.rnd);
+      add('Result', `Value as on date (work done ${Math.round(stage * 100)}%)`, F.fam === 'CAN' ? 'land + building × stage + extras' : 'land + building × stage', res.fmvNow, 'Rs');
+      add('Result', 'Value after completion', 'land + building + extras', res.fmv, 'Rs');
+    } else add('Result', 'Fair market value', `round(${fmtN(total)}) to ${fmtN(S.rnd)}`, res.fmv, 'Rs');
+    const base = F.uc ? res.fmvNow : res.fmv;
+    res.rv = VS.mround(base * S.rv, S.rnd); res.fsv = VS.mround(base * S.fsv, S.rnd);
+    // guideline value
+    const totA = F.vacant ? 0 : fl.area.bsmt + fl.area.gf + fl.area.ff + fl.area.sf + fl.area.tf;
+    const gl = n(f.glr_land), gb = n(f.glr_bldg), fac = VS.depFactor(age);
+    let gvl = ext * gl, gvb = totA * gb * (age > 2 ? fac : 1);
+    if (F.fam === 'BOM') { gvl = VS.mround(gvl, S.rnd); gvb = VS.mround(gvb, S.rnd); }
+    if (F.fam === 'IOB') gvl = VS.round(gvl);
+    res.gv = gl ? gvl + (gb ? gvb : 0) : null;
+    if (gl) add('Guideline', 'Govt. guideline value', `land ${fmtN(ext, 2)} sqm × ${fmtN(gl)}` + (gb ? ` + building ${fmtN(totA, 2)} sqm × ${fmtN(gb)} × ${fac}` : ''), res.gv, 'Rs');
+    Object.assign(res, { land, landRate: rate, sqft, repl, dep, bldg, extras, stage, floors: fl, totArea: totA });
+  } else {
+    const bua = n(f.bua), sbua = bua * S.sbua, carpet = bua * S.carp;
+    const age = F.uc ? 0 : (F.fam === 'PNB' && VS.has(f.age) ? n(f.age) : VS.ageOf(f.year, c.valDate));
+    res.age = age;
+    const ratio = age > 2 ? 1 - (1 - S.salv) * Math.min(1, age / S.life) : 1;
+    const br = n(f.bldg_rate), cr = n(f.comp_rate);
+    const depB = ratio * br, landO = cr - br, comp = depB + landO;
+    add('Flat', 'Areas', `built-up ${fmtN(bua, 2)} · super built-up ${fmtN(sbua, 2)} · carpet ${fmtN(carpet, 2)}`, sbua, 'sqm');
+    add('Flat', 'Depreciated building rate', `${fmtN(br)} × ${ratio.toFixed(4)} (age ${age} yrs)`, depB, 'Rs/sqft');
+    add('Flat', 'Land & other component', `${fmtN(cr)} − ${fmtN(br)}`, landO, 'Rs/sqft');
+    add('Flat', 'Composite rate adopted', '', comp, 'Rs/sqft');
+    const basis = F.fam === 'CAN' ? Math.round(bua * 10.7636 * 100) / 100 : Math.max(bua, sbua) * 10.76;
+    const ucComp = F.uc ? cr : comp;
+    const value = basis * ucComp;
+    add('Flat', F.fam === 'CAN' ? 'Value (built-up area basis, Canara)' : 'Value (super built-up area basis)', `${fmtN(basis, 2)} sqft × ${fmtN(ucComp, 2)}`, value, 'Rs');
+    res.fmv = VS.mround(value, S.rnd);
+    if (F.uc) {
+      const st = Math.min(1, n(f.stage) / 100 || 0);
+      res.fmvNow = VS.mround(value * st, S.rnd);
+      add('Result', `Value as on date (work done ${Math.round(st * 100)}%)`, '', res.fmvNow, 'Rs');
+    }
+    add('Result', F.uc ? 'Value after completion' : 'Fair market value', `round to ${fmtN(S.rnd)}`, res.fmv, 'Rs');
+    const base = F.uc ? res.fmvNow : res.fmv;
+    res.rv = VS.mround(base * S.rv, S.rnd); res.fsv = VS.mround(base * S.fsv, S.rnd);
+    const gl = n(f.glr_land), gfr = n(f.glr_flat);
+    res.gv = gl && gfr ? (gl + (VS.mround(100 - age, 10) / 100) * (gfr - gl)) * Math.max(bua, sbua) : null;
+    if (res.gv) add('Guideline', 'Govt. guideline value', `(${fmtN(gl)} + ${VS.mround(100 - age, 10)}% × (${fmtN(gfr)} − ${fmtN(gl)})) × ${fmtN(sbua, 2)} sqm`, res.gv, 'Rs');
+    Object.assign(res, { bua, sbua, carpet, comp, depB, landO, basis });
+  }
+  add('Result', 'Realizable value', `${Math.round(S.rv * 100)}%`, res.rv, 'Rs');
+  add('Result', 'Forced / distress sale value', `${Math.round(S.fsv * 100)}%`, res.fsv, 'Rs');
+  return res;
+};
+
+function fmtN(x, d) { if (x === null || x === undefined || !isFinite(x)) return '–'; return Number(x).toLocaleString('en-IN', { maximumFractionDigits: d === undefined ? 0 : d, minimumFractionDigits: 0 }); }
+VS.fmtN = fmtN;
+VS.rs = x => (x === null || x === undefined || !isFinite(x)) ? '–' : '₹ ' + fmtN(Math.round(x));
+
+VS.words = x => {
+  const n0 = Math.round(VS.num(x)); if (!n0) return '';
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const w2 = k => k < 20 ? ones[k] : (tens[Math.floor(k / 10)] + ' ' + ones[k % 10]).trim();
+  const cr = Math.floor(n0 / 1e7), lk = Math.floor(n0 % 1e7 / 1e5), th = Math.floor(n0 % 1e5 / 1e3), hu = Math.floor(n0 % 1e3 / 100), re = n0 % 100;
+  const crw = cr >= 100 ? w2(Math.floor(cr / 100)) + ' Hundred ' + w2(cr % 100) : w2(cr);
+  const t = [(cr ? crw + ' Crore' : ''), (lk ? w2(lk) + ' Lac' : ''), (th ? w2(th) + ' Thousand' : ''), (hu ? w2(hu) + ' Hundred' : ''), w2(re)].filter(Boolean).join(' ');
+  return 'Rupees ' + t.replace(/\s+/g, ' ').trim() + ' Only';
+};
+
+/* ---------- comparable sale instances ---------- */
+VS.comps = (c, S) => {
+  const n = VS.num, vd = c.valDate ? new Date(c.valDate) : new Date();
+  const rows = (c.comps || []).map((r, i) => {
+    const area = r.unit === 'sqm' ? n(r.area) * 10.76 : n(r.area);
+    const rate = area ? n(r.price) / area : 0;
+    let months = 0;
+    if (r.date) { const d = new Date(r.date); months = Math.max(0, (vd - d) / (1000 * 3600 * 24 * 30.44)); }
+    const tAdj = (S.esc / 100) * months / 12;
+    const adj = (1 + tAdj) * (1 + n(r.adjLoc) / 100) * (1 + n(r.adjSize) / 100) * (1 + n(r.adjOther) / 100);
+    return { i, area, rate, months, tAdj, adjRate: rate * adj, valid: area > 0 && n(r.price) > 0 };
+  });
+  const v = rows.filter(r => r.valid).map(r => r.adjRate);
+  const out = { rows, n: v.length };
+  if (!v.length) return out;
+  const sorted = [...v].sort((a, b) => a - b);
+  const med = sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+  const mad = (() => { const d = v.map(x => Math.abs(x - med)).sort((a, b) => a - b); return d.length % 2 ? d[(d.length - 1) / 2] : (d[d.length / 2 - 1] + d[d.length / 2]) / 2; })();
+  rows.forEach(r => { r.outlier = r.valid && v.length >= 4 && mad > 0 && Math.abs(r.adjRate - med) / (1.4826 * mad) > 2.5; });
+  const kept = rows.filter(r => r.valid && !r.outlier).map(r => r.adjRate);
+  const mean = kept.reduce((a, b) => a + b, 0) / kept.length;
+  const sd = kept.length > 1 ? Math.sqrt(kept.reduce((a, b) => a + (b - mean) ** 2, 0) / (kept.length - 1)) : 0;
+  Object.assign(out, { median: med, mean, sd, cv: mean ? sd / mean : 0, min: Math.min(...kept), max: Math.max(...kept), kept: kept.length, suggested: Math.round(mean / 10) * 10 });
+  return out;
+};
+
+/* ---------- quality checks ---------- */
+VS.checks = (c, r, S) => {
+  const f = c.f || {}, n = VS.num, F = r.fmt, out = [];
+  const E = (id, msg, tab) => out.push({ sev: 'error', id, msg, tab });
+  const W = (id, msg, tab) => out.push({ sev: 'warn', id, msg, tab });
+  const I = (id, msg, tab) => out.push({ sev: 'info', id, msg, tab });
+  const today = new Date(); today.setHours(23, 59, 59);
+  if (!VS.has(f.owner)) E('owner', 'Owner name is missing.', 'property');
+  if (!VS.has(c.bank)) E('bank', 'Choose the bank or purpose of valuation.', 'assignment');
+  if (!VS.has(f.inspect_date)) W('insp', 'Date of inspection is not entered.', 'assignment');
+  else if (new Date(f.inspect_date) > today) E('insp2', 'Date of inspection is in the future.', 'assignment');
+  if (c.valDate && f.inspect_date && new Date(c.valDate) < new Date(f.inspect_date)) W('vd', 'Date of valuation is before the date of inspection.', 'assignment');
+  const bnd = ['bN', 'bS', 'bE', 'bW'].filter(k => !VS.has(f[k]));
+  if (bnd.length) W('bnd', `Boundaries missing: ${bnd.map(k => ({ bN: 'North', bS: 'South', bE: 'East', bW: 'West' })[k]).join(', ')}.`, 'property');
+  if (!VS.has(f.locality) || !VS.has(f.town)) W('addr', 'Locality or town is missing from the address.', 'property');
+  if (!F.isFlat) {
+    if (!n(f.extent)) E('ext', 'Plot area is missing.', 'land');
+    const rate = r.landRate;
+    if (!rate) E('rate', 'Land rate is missing (prevailing / adopted rate).', 'land');
+    if (VS.has(f.adopted) && n(f.pmr) && n(f.adopted) > n(f.pmr) * 1.001) W('adopt', 'Adopted land rate is higher than the prevailing market rate.', 'land');
+    if ((F.fam === 'CAN' || F.fam === 'CBDT') && VS.has(f.adopted) && Math.abs(n(f.adopted) - n(f.pmr) * S.ladj) > 1) I('ladj', `${VS.FORMAT_NAMES[F.fam]} adopts ${Math.round(S.ladj * 100)}% of the prevailing rate (Rs ${fmtN(n(f.pmr) * S.ladj)}/sqft), not your adopted rate of Rs ${fmtN(n(f.adopted))}.`, 'land');
+    if (n(f.dimN) && n(f.dimE) && n(f.extent)) {
+      const a = n(f.dimN) * n(f.dimE), d = Math.abs(a - n(f.extent)) / n(f.extent);
+      if (d > 0.05) W('dim', `Dimensions give ${fmtN(a, 2)} sqm but plot area is ${fmtN(n(f.extent), 2)} sqm (${(d * 100).toFixed(1)}% apart).`, 'land');
+    }
+    if (!F.vacant) {
+      if (!n(f.gf_area)) E('gfa', 'Ground floor area is missing.', 'building');
+      if (!n(f.gf_rate)) E('gfr', 'Construction rate for the ground floor is missing.', 'building');
+      if (!F.uc && !VS.has(f.year)) E('yr', 'Year of construction is missing.', 'building');
+      if (VS.has(f.year) && (n(f.year) > today.getFullYear() || (n(f.year) > 200 && n(f.year) < 1900))) E('yr2', 'Year of construction looks wrong.', 'building');
+      if (n(f.extent) && n(f.gf_area) > n(f.extent)) E('cov', `Ground floor (${fmtN(n(f.gf_area), 2)} sqm) is larger than the plot (${fmtN(n(f.extent), 2)} sqm).`, 'building');
+      if (n(f.extent) && r.totArea / n(f.extent) > S.fsiMax) W('fsi', `Built-up area uses FSI ${(r.totArea / n(f.extent)).toFixed(2)}, above ${S.fsiMax}. Check the sanctioned plan.`, 'building');
+      if (r.age >= S.life) W('life', `Building is ${r.age} years old, at or beyond the ${S.life}-year life; it is held at salvage value.`, 'building');
+      if (!VS.has(f.permission)) W('perm', 'Building permission / plan sanction details are not entered.', 'building');
+      if (F.uc && !n(f.stage)) W('stage', 'Under construction: enter the % of work completed.', 'building');
+    }
+  } else {
+    if (!n(f.bua)) E('bua', 'Built-up area of the flat is missing.', 'flat');
+    if (!n(f.comp_rate)) E('cr', 'Composite rate is missing.', 'flat');
+    if (n(f.comp_rate) && n(f.bldg_rate) >= n(f.comp_rate)) E('cr2', 'Building component rate must be less than the composite rate.', 'flat');
+    if (!F.uc && !VS.has(f.year) && !(F.fam === 'PNB' && VS.has(f.age))) E('fyr', 'Year of construction of the building is missing.', 'flat');
+    if (r.age >= S.life) W('life', `Building is ${r.age} years old, at or beyond the ${S.life}-year life.`, 'flat');
+  }
+  if (r.gv === null) W('gv', 'Guideline (ready reckoner) rates are not entered, so guideline value is not worked out.', F.isFlat ? 'flat' : 'land');
+  else if (r.fmv) {
+    const base = F.uc ? r.fmvNow : r.fmv;
+    if (base < r.gv) W('gvlow', `Market value (${VS.rs(base)}) is below the guideline value (${VS.rs(r.gv)}). Banks usually ask for a justification.`, 'valuation');
+    if (base > r.gv * 2.5) W('gvhigh', `Market value is ${(base / r.gv).toFixed(1)} × the guideline value. Record the reason.`, 'valuation');
+  }
+  const cs = VS.comps(c, S);
+  if (cs.n < 2) W('comps', 'Fewer than two sale instances recorded. Bank formats ask for at least two.', 'comps');
+  else {
+    if (cs.cv > 0.15) W('cv', `Sale instances vary widely (spread ${(cs.cv * 100).toFixed(0)}%). Check the adjustments.`, 'comps');
+    const ref = F.isFlat ? n(f.comp_rate) : (VS.has(f.adopted) ? n(f.adopted) : n(f.pmr));
+    if (ref && cs.suggested && Math.abs(ref - cs.suggested) / cs.suggested > 0.2) W('cmpdev', `Your rate (Rs ${fmtN(ref)}) is ${((ref / cs.suggested - 1) * 100).toFixed(0)}% from the sale-instance rate (Rs ${fmtN(cs.suggested)}).`, 'comps');
+    if (cs.rows.some(x => x.outlier)) I('outl', 'One or more sale instances were left out as outliers.', 'comps');
+  }
+  const ph = c.photos || [];
+  if (ph.length < 4) W('ph', `${ph.length} photo(s) attached. Most banks expect at least four, including one with the owner/representative.`, 'photos');
+  if (!(n(c.lat) && n(c.lon))) W('geo', 'Latitude / longitude of the property is not recorded.', 'property');
+  if (r.unplacedExtras && r.unplacedExtras.length) I('xpl', `${r.unplacedExtras.length} extra item(s) have no place in the ${F.sheet} format and are left out of its value.`, 'building');
+  if (F.fam === 'CAPG') I('capg', 'Capital Gains needs rates as on 01.04.2001. Finish the valuation in the Excel workbook.', 'valuation');
+  return out;
+};
+
+if (typeof module !== 'undefined') module.exports = VS;
+</script>
+<script>/* ===== Valuation Studio – files: Excel hand-off, zip, EXIF, photo processing ===== */
+VS.esc = s => String(s).replace(/\\/g, '\\\\').replace(/\t/g, '\\t').replace(/\r?\n/g, '\\n');
+
+VS.exportValues = (c, r, spec) => {
+  const f = Object.assign({}, c.f || {}), F = r.fmt, S = r.S;
+  if (!F.isFlat && !F.vacant) {
+    const fl = r.floors;
+    f.ff_area = fl.area.ff || ''; f.sf_area = fl.area.sf || ''; f.tf_area = fl.area.tf || ''; f.bsmt_area = fl.area.bsmt || '';
+    f.bsmt_rate = fl.area.bsmt ? fl.rate.bsmt : ''; f.ff_rate = fl.area.ff ? fl.rate.ff : ''; f.sf_rate = fl.area.sf ? fl.rate.sf : '';
+    if (VS.has(f.year) && !F.uc) f.year_commence = VS.num(f.year) - 1;
+  }
+  if (F.uc) { delete f.year; delete f.year_commence; }
+  if (F.isFlat && F.fam === 'PNB') f.age = r.age;
+  if (F.vacant) { f.tech = 'vacant plot; hence not applicable'; ['gf_area', 'gf_rate', 'upper_floors', 'year'].forEach(k => delete f[k]); }
+  else if (F.uc) f.tech = 'under construction';
+  if (VS.has(f.stage)) f.stage = VS.num(f.stage) / 100;
+  if (!VS.has(f.adopted) && VS.has(f.pmr)) f.adopted = f.pmr;
+  if (spec) {
+    const rowsIn = k => { const fd = spec.fields.find(x => x.key === k); return !!(fd && fd.rows[F.block] && fd.rows[F.block].length); };
+    if (rowsIn('x_rest')) { let rest = 0; for (const k of Object.keys(f)) if (k.startsWith('x_') && k !== 'x_rest' && !rowsIn(k)) rest += VS.num(f[k]); if (rest) f.x_rest = rest; }
+  }
+  return f;
+};
+
+VS.excelFile = (c, r, spec) => {
+  const F = r.fmt, vals = VS.exportValues(c, r, spec);
+  const L = ['#VALUATION-STUDIO\t1', `CASE\t${VS.esc(c.ref || c.id)}`,
+    `SEL\tC4\t${VS.esc(c.bank)}`, `SEL\tC5\t${VS.esc(c.ptype)}`, `SEL\tC6\t${VS.esc(c.cstatus)}`, `SEL\tC7\t${VS.esc(c.fmtOverride || 'Auto')}`];
+  const used = [], missing = [];
+  for (const fd of spec.fields) {
+    const rows = fd.rows[F.block];
+    const v = vals[fd.key];
+    if (!VS.has(v)) continue;
+    if (!rows || !rows.length) { if (fd.type !== 'derived') missing.push(fd.label); continue; }
+    const t = ['num', 'amt', 'pct', 'derived'].includes(fd.type) && fd.key !== 'tech' ? 'n' : fd.type === 'date' ? 'd' : 't';
+    for (const row of rows) L.push(`ROW\t${row}\t${t}\t${VS.esc(v)}`);
+    if (fd.type !== 'derived') used.push(fd.label);
+  }
+  const cells = (spec.report_cells || {})[F.sheet] || {};
+  const map = { fmv: r.fmv, fmv_now: r.fmvNow, rv: r.rv, fsv: r.fsv, gv: r.gv };
+  const names = { fmv: F.uc ? 'Value after completion' : 'Fair market value', fmv_now: 'Value as on date', rv: 'Realizable value', fsv: 'Forced sale value', gv: 'Guideline value' };
+  for (const k in cells) if (map[k] !== null && map[k] !== undefined && isFinite(map[k])) L.push(`CHECK\t${F.sheet}!${cells[k]}\t${Math.round(map[k])}\t${names[k]}`);
+  return { text: L.join('\r\n') + '\r\n', used, missing, sheet: F.sheet };
+};
+
+/* ---- zip (store, no compression; JPEGs are already compressed) ---- */
+VS.crcTable = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+VS.crc32 = u8 => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = VS.crcTable[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+VS.zip = files => { // files: [{name, data:Uint8Array}]
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  for (const f of files) {
+    const nm = enc.encode(f.name), crc = VS.crc32(f.data), sz = f.data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, 0, true); h.setUint16(12, 0x21, true); h.setUint32(14, crc, true); h.setUint32(18, sz, true); h.setUint32(22, sz, true);
+    h.setUint16(26, nm.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), nm, f.data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, 0, true); c.setUint16(14, 0x21, true); c.setUint32(16, crc, true); c.setUint32(20, sz, true); c.setUint32(24, sz, true);
+    c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), nm);
+    off += 30 + nm.length + sz;
+  }
+  const csz = central.reduce((a, b) => a + b.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csz, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: 'application/zip' });
+};
+
+/* ---- EXIF: date taken + GPS ---- */
+VS.exif = buf => {
+  const d = new DataView(buf), out = {};
+  try {
+    if (d.getUint16(0) !== 0xFFD8) return out;
+    let p = 2;
+    while (p < d.byteLength - 4) {
+      const mk = d.getUint16(p), len = d.getUint16(p + 2);
+      if (mk === 0xFFE1 && d.getUint32(p + 4) === 0x45786966) {
+        const t = p + 10, le = d.getUint16(t) === 0x4949;
+        const u16 = o => d.getUint16(t + o, le), u32 = o => d.getUint32(t + o, le);
+        const rat = o => u32(o) / (u32(o + 4) || 1);
+        const ifd = (o, cb) => { const n = u16(o); for (let i = 0; i < n; i++) { const e = o + 2 + i * 12; cb(u16(e), u16(e + 2), u32(e + 4), e + 8); } };
+        const str = (o, n) => { let s = ''; for (let i = 0; i < n - 1; i++) s += String.fromCharCode(d.getUint8(t + o + i)); return s; };
+        let gps = 0, sub = 0;
+        ifd(u32(4), (tag, type, cnt, vo) => { if (tag === 0x8825) gps = u32(vo); if (tag === 0x8769) sub = u32(vo); if (tag === 0x0112) out.orientation = u16(vo); });
+        if (sub) ifd(sub, (tag, type, cnt, vo) => { if (tag === 0x9003) out.taken = str(u32(vo), cnt); });
+        if (gps) {
+          const g = {};
+          ifd(gps, (tag, type, cnt, vo) => {
+            if (tag === 1 || tag === 3) g[tag] = String.fromCharCode(d.getUint8(t + vo)); // ASCII ref stored inline
+            if (tag === 2 || tag === 4) { const o = u32(vo); g[tag] = rat(o) + rat(o + 8) / 60 + rat(o + 16) / 3600; }
+          });
+          if (g[2] && g[4]) { out.lat = g[2] * (g[1] === 'S' ? -1 : 1); out.lon = g[4] * (g[3] === 'W' ? -1 : 1); }
+        }
+        break;
+      }
+      if ((mk & 0xFF00) !== 0xFF00) break;
+      p += 2 + len;
+    }
+  } catch (e) { }
+  return out;
+};
+
+/* ---- photo processing: auto levels + resize + stamp + compress to target KB ---- */
+VS.loadImage = blob => new Promise((ok, bad) => {
+  const u = URL.createObjectURL(blob), im = new Image();
+  im.onload = () => { ok(im); setTimeout(() => URL.revokeObjectURL(u), 1000); };
+  im.onerror = () => { URL.revokeObjectURL(u); bad(new Error('This file could not be read as a picture. Use JPG or PNG.')); };
+  im.src = u;
+});
+
+VS.autoLevels = (ctx, w, h) => {
+  const img = ctx.getImageData(0, 0, w, h), a = img.data, hist = new Uint32Array(256);
+  const step = Math.max(1, Math.floor((w * h) / 120000)) * 4; let n = 0, sum = 0;
+  for (let i = 0; i < a.length; i += step) { const l = (a[i] * 77 + a[i + 1] * 150 + a[i + 2] * 29) >> 8; hist[l]++; sum += l; n++; }
+  let acc = 0, lo = 0, hi = 255;
+  for (let i = 0; i < 256; i++) { acc += hist[i]; if (acc >= n * 0.005) { lo = i; break; } }
+  acc = 0; for (let i = 255; i >= 0; i--) { acc += hist[i]; if (acc >= n * 0.005) { hi = i; break; } }
+  if (hi - lo < 16) return { applied: false };
+  let sc = 255 / (hi - lo); if (sc > 1.8) { const mid = (lo + hi) / 2; sc = 1.8; lo = mid - 127.5 / sc; }
+  const mean = sum / n; let m2 = Math.min(.95, Math.max(.05, (mean - lo) * sc / 255));
+  let gm = Math.log(0.48) / Math.log(m2); gm = Math.min(1.4, Math.max(0.7, gm));
+  const lut = new Uint8ClampedArray(256);
+  for (let i = 0; i < 256; i++) { let v = Math.min(1, Math.max(0, (i - lo) * sc / 255)); lut[i] = Math.round(255 * Math.pow(v, gm)); }
+  for (let i = 0; i < a.length; i += 4) { a[i] = lut[a[i]]; a[i + 1] = lut[a[i + 1]]; a[i + 2] = lut[a[i + 2]]; }
+  ctx.putImageData(img, 0, 0);
+  return { applied: true, lo: Math.round(lo), hi, gamma: +gm.toFixed(2) };
+};
+
+VS.toBlob = (cv, q) => new Promise(ok => cv.toBlob(ok, 'image/jpeg', q));
+
+VS.processPhoto = async (file, opt) => {
+  const buf = await file.arrayBuffer();
+  const ex = VS.exif(buf);
+  const im = await VS.loadImage(new Blob([buf], { type: file.type || 'image/jpeg' }));
+  let w = im.naturalWidth, h = im.naturalHeight;
+  let k = Math.min(1, opt.maxPx / Math.max(w, h));
+  const draw = (scale) => {
+    const cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+    let src = im, sw = w, sh = h;
+    // step down for quality
+    while (sw / 2 > cw) {
+      const t = document.createElement('canvas'); t.width = Math.round(sw / 2); t.height = Math.round(sh / 2);
+      t.getContext('2d').drawImage(src, 0, 0, t.width, t.height); src = t; sw = t.width; sh = t.height;
+    }
+    const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+    const ctx = cv.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, cw, ch);
+    let lv = { applied: false };
+    if (opt.autofix) lv = VS.autoLevels(ctx, cw, ch);
+    if (opt.stamp) {
+      const lat = ex.lat ?? opt.lat, lon = ex.lon ?? opt.lon;
+      const when = ex.taken ? ex.taken.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$3-$2-$1') : new Date().toLocaleString('en-IN');
+      const txt = [opt.ref, when, (lat && lon) ? `${(+lat).toFixed(6)}° N, ${(+lon).toFixed(6)}° E` : ''].filter(Boolean).join('  ·  ');
+      const fs = Math.max(11, Math.round(cw / 70));
+      ctx.font = `600 ${fs}px "IBM Plex Sans", Arial, sans-serif`;
+      const bh = Math.round(fs * 1.9);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, ch - bh, cw, bh);
+      ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(txt, Math.round(fs * .8), ch - bh / 2);
+    }
+    return { cv, lv };
+  };
+  let { cv, lv } = draw(k), blob = null, q = 0.9;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    let lo = 0.35, hi = 0.92; blob = await VS.toBlob(cv, hi);
+    if (blob.size > opt.targetKB * 1024) {
+      for (let i = 0; i < 7; i++) { q = (lo + hi) / 2; const b = await VS.toBlob(cv, q); if (b.size > opt.targetKB * 1024) hi = q; else { lo = q; blob = b; } }
+      if (blob.size > opt.targetKB * 1024) { blob = await VS.toBlob(cv, 0.35); }
+    } else q = hi;
+    if (blob.size <= opt.targetKB * 1024) break;
+    k *= 0.82; ({ cv, lv } = draw(k));
+  }
+  return { blob, w: cv.width, h: cv.height, kb: Math.round(blob.size / 1024), q: +q.toFixed(2), exif: ex, levels: lv, origKB: Math.round(file.size / 1024), origW: w, origH: h };
+};
+
+VS.blobToDataURL = b => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
+</script>
+<script>/* ===== Valuation Studio – printable summary & working notes (standalone HTML) ===== */
+VS.summaryHTML = async (c, S, settings) => {
+  const h = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+  const r = VS.compute(c, S), F = r.fmt, f = c.f || {}, P = (settings && settings.profile) || {};
+  const ch = VS.checks(c, r, S), cs = VS.comps(c, S);
+  const FL = Object.fromEntries((window.VS_SPEC.fields || []).map(x => [x.key, x.label]));
+  const base = F.uc ? r.fmvNow : r.fmv;
+  const d = s => s ? new Date(s).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '–';
+  const row = (k, v) => VS.has(v) ? `<tr><th>${h(k)}</th><td>${h(v)}</td></tr>` : '';
+  const fr = keys => keys.map(k => row(FL[k] || k, f[k])).join('');
+  const photos = [];
+  for (const p of c.photos || []) {
+    try { const b = await VS.Store.photoBlob(p); photos.push({ p, src: await VS.blobToDataURL(b) }); } catch (e) { }
+  }
+  const trace = [...new Set(r.lines.map(l => l.group))].map(g => `<tr class="g"><th colspan="3">${h(g)}</th></tr>` + r.lines.filter(l => l.group === g).map(l => `<tr><td>${h(l.label)}</td><td class="fx">${h(l.formula)}</td><td class="n">${l.unit === 'Rs' ? VS.rs(l.value) : VS.fmtN(l.value, 2) + ' ' + h(l.unit)}</td></tr>`).join('')).join('');
+  const comps = (c.comps || []).map((x, i) => { const k = cs.rows[i]; return `<tr${k.outlier ? ' class="out"' : ''}><td>${d(x.date)}</td><td>${h(x.loc)}</td><td class="n">${VS.fmtN(k.area)}</td><td class="n">${VS.rs(VS.num(x.price))}</td><td class="n">${VS.fmtN(k.rate)}</td><td class="n">${VS.fmtN(k.adjRate)}${k.outlier ? ' (excluded)' : ''}</td><td>${h(x.src)}</td></tr>`; }).join('');
+  const geo = VS.num(c.lat) && VS.num(c.lon) ? `${VS.num(c.lat).toFixed(6)}° N, ${VS.num(c.lon).toFixed(6)}° E` : '';
+  const open = ch.filter(x => x.sev !== 'info');
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${h(c.ref)} – Valuation summary – ${h(f.owner || '')}</title>
+<style>
+@page{size:A4;margin:14mm 13mm}
+body{font:10.5pt/1.45 "IBM Plex Sans","Segoe UI",Arial,sans-serif;color:#1b2430;margin:0;background:#fff}
+.wrap{max-width:190mm;margin:0 auto;padding:10mm 0}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0f5f58;padding-bottom:8px;margin-bottom:14px;gap:16px}
+header h1{font:600 15pt "IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;margin:0;color:#0f5f58;letter-spacing:.02em}
+header p{margin:2px 0 0;font-size:9pt;color:#4a5866}
+.ref{text-align:right;font-size:9pt;color:#4a5866}
+h2{font:600 11.5pt "IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#0f5f58;margin:18px 0 6px;border-bottom:1px solid #c9d6d4;padding-bottom:3px;break-after:avoid}
+table{width:100%;border-collapse:collapse;font-size:9.5pt;break-inside:auto}
+th,td{padding:4px 6px;border-bottom:1px solid #e3e9e8;vertical-align:top;text-align:left}
+table.kv th{width:42%;font-weight:500;color:#4a5866}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.fx{color:#4a5866;font-size:8.5pt}
+tr.g th{background:#eef4f3;color:#0f5f58;font-weight:600}
+tr.out td{color:#9aa5af;text-decoration:line-through}
+.sum{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin:6px 0 4px}
+.sum div{border:1px solid #c9d6d4;padding:8px 10px;border-radius:4px}
+.sum span{display:block;font-size:8pt;text-transform:uppercase;letter-spacing:.05em;color:#4a5866}
+.sum b{font:600 13pt "IBM Plex Mono",Consolas,monospace}
+.sum div:first-child{background:#0f5f58;color:#fff;border-color:#0f5f58}.sum div:first-child span{color:#cfe6e2}
+.words{font-style:italic;color:#4a5866;margin:2px 0 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ph{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+figure{margin:0;break-inside:avoid;border:1px solid #e3e9e8;padding:5px}
+figure img{width:100%;display:block}
+figcaption{font-size:8.5pt;color:#4a5866;padding-top:4px}
+.chk li{margin:2px 0}.chk .error{color:#a3241b}.chk .warn{color:#8a5a00}
+.sign{display:flex;justify-content:space-between;margin-top:34px;font-size:9.5pt}
+.sign div{min-width:60mm;border-top:1px solid #1b2430;padding-top:4px}
+p.rem{white-space:pre-wrap}
+@media print{.wrap{padding:0}a{color:inherit;text-decoration:none}}
+@media (max-width:600px){.sum,.two,.ph{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<header><div><h1>${h(P.firm || P.name || 'Valuation summary')}</h1><p>${h([P.name, P.qual, P.reg ? 'Reg. ' + P.reg : ''].filter(Boolean).join(' · '))}</p><p>${h([P.addr, P.phone, P.email].filter(Boolean).join(' · '))}</p></div>
+<div class="ref">Ref. <b>${h(c.ref)}</b><br>Valuation date ${d(c.valDate)}<br>${h(c.bank)}${c.branch ? ', ' + h(c.branch) : ''}<br>Format: ${h(F.sheet)}</div></header>
+<h2>Valuation summary</h2>
+<div class="sum"><div><span>${F.uc ? 'Value as on date' : 'Fair market value'}</span><b>${VS.rs(base)}</b></div><div><span>Realizable</span><b>${VS.rs(r.rv)}</b></div><div><span>Forced sale</span><b>${VS.rs(r.fsv)}</b></div><div><span>Guideline</span><b>${r.gv === null ? '–' : VS.rs(r.gv)}</b></div></div>
+<p class="words">${h(VS.words(base))}${F.uc ? ` · Value after completion ${VS.rs(r.fmv)}` : ''}</p>
+<div class="two"><div><h2>Property</h2><table class="kv">${row('Owner(s)', f.owner)}${row('Borrower(s)', f.borrower)}${row('Property type', c.ptype + (F.uc ? ' (under construction)' : ''))}${fr(['plot_no', 'survey_no', 'house_no', 'flat_no', 'flat_floor', 'locality', 'town', 'district', 'local_body', 'area_use', 'loc_class'])}${row('Coordinates', geo)}</table></div>
+<div><h2>Boundaries (as per deed)</h2><table class="kv">${row('North', f.bN)}${row('South', f.bS)}${row('East', f.bE)}${row('West', f.bW)}</table>
+<h2>Inspection</h2><table class="kv">${row('Date of inspection', d(f.inspect_date))}${row('Purpose', f.purpose)}${row('Tenure', f.freehold)}${row('Occupied by tenant', f.tenant)}</table></div></div>
+<h2>${F.isFlat ? 'Flat and building' : 'Land and building'}</h2>
+<table class="kv">${F.isFlat ? fr(['bua', 'comp_rate', 'bldg_rate', 'year', 'construction', 'bldg_floors', 'units', 'lift', 'parking', 'undivided', 'glr_land', 'glr_flat']) : fr(['dimN', 'dimE', 'extent', 'shape', 'level', 'road_type', 'road_width', 'pmr', 'adopted', 'glr_land', 'construction', 'year', 'upper_floors', 'gf_area', 'gf_rate', 'glr_bldg', 'condition', 'permission'])}</table>
+<h2>Calculation</h2><table>${trace}</table>
+${comps ? `<h2>Sale instances</h2><table><tr><th>Date</th><th>Location</th><th>Area sqft</th><th>Price</th><th>Rate</th><th>Adjusted rate</th><th>Source</th></tr>${comps}</table><p class="words">Rates brought to the valuation date at ${S.esc}% a year and adjusted for location, size and other factors. Indicated rate Rs ${VS.fmtN(cs.suggested)}/sqft from ${cs.kept} instance(s); spread ${(cs.cv * 100).toFixed(1)}%.</p>` : ''}
+${c.remarks ? `<h2>Remarks</h2><p class="rem">${h(c.remarks)}</p>` : ''}
+<h2>Quality checks</h2>${open.length ? `<ul class="chk">${open.map(x => `<li class="${x.sev}">${x.sev === 'error' ? 'To fix: ' : 'Reviewed: '}${h(x.msg)}</li>`).join('')}</ul>` : '<p>All automatic checks passed.</p>'}
+${photos.length ? `<h2>Photographs</h2><div class="ph">${photos.map(({ p, src }, i) => `<figure><img src="${src}" alt=""><figcaption>${i + 1}. ${h(p.caption || '')}${p.lat ? ` · ${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}` : ''}${p.taken ? ' · ' + h(p.taken) : ''}</figcaption></figure>`).join('')}</div>` : ''}
+<div class="sign"><div>Place: ${h(f.town || '')}<br>Date: ${d(c.valDate)}</div><div>${h(P.name || 'Valuer')}<br>${h(P.qual || '')}${P.reg ? '<br>Reg. ' + h(P.reg) : ''}</div></div>
+</div></body></html>`;
+};
+</script>
+<script>/* ===== Valuation Studio – storage + interface ===== */
+(function () {
+  const $ = (s, el = document) => el.querySelector(s);
+  const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const SPEC = window.VS_SPEC;
+  const FIELD = Object.fromEntries(SPEC.fields.map(f => [f.key, f]));
+  const localISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const todayISO = () => localISO(new Date());
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+  /* ---------------- storage ---------------- */
+  const Store = {
+    mode: 'local', db: null, user: null, assets: null, downloads: null, sample: null, uid: null,
+    async init() {
+      const C = window.claude;
+      if (C && C.use) {
+        try {
+          const [db, user, assets, downloads, sample] = await Promise.all(['db', 'user', 'assets', 'downloads', 'sample'].map(n => C.use(n).catch(() => null)));
+          Object.assign(this, { assets, downloads, sample, user });
+          if (db && user) { const id = await user.id(); if (id) { this.db = db; this.uid = id; this.mode = 'cloud'; } }
+        } catch (e) { }
+      }
+      if (this.mode !== 'cloud') await this.localInit();
+    },
+    col() { return this.db.collection('data/users/' + this.uid + '/cases'); },
+    /* on-device storage: IndexedDB (cases, settings, photos) */
+    idb() {
+      if (this._idb) return this._idb;
+      return (this._idb = new Promise((ok, bad) => {
+        const r = indexedDB.open('vs-photos', 2);
+        r.onupgradeneeded = () => { const d = r.result; for (const n of ['p', 'cases', 'meta']) if (!d.objectStoreNames.contains(n)) d.createObjectStore(n); };
+        r.onsuccess = () => ok(r.result); r.onerror = () => bad(r.error);
+      }));
+    },
+    async tx(store, mode, fn) {
+      const d = await this.idb();
+      return new Promise((ok, bad) => { const t = d.transaction(store, mode); const os = t.objectStore(store); let out; const q = fn(os); if (q) q.onsuccess = () => { out = q.result; }; t.oncomplete = () => ok(out); t.onerror = () => bad(t.error || new Error('Saving on this device failed.')); t.onabort = () => bad(t.error || new Error('This device has no room left to save.')); });
+    },
+    async localInit() {
+      try { if (navigator.storage && navigator.storage.persist) this.persisted = await navigator.storage.persist(); } catch (e) { }
+      // one-time move of cases saved by older versions in localStorage
+      try {
+        const old = JSON.parse(localStorage.getItem('vs.cases') || 'null');
+        if (old && old.length) { for (const c of old) await this.tx('cases', 'readwrite', os => os.put(c, c.id)); localStorage.removeItem('vs.cases'); }
+        const os = JSON.parse(localStorage.getItem('vs.settings') || 'null');
+        if (os) { await this.tx('meta', 'readwrite', o => o.put(os, 'settings')); localStorage.removeItem('vs.settings'); }
+      } catch (e) { }
+    },
+    async list() {
+      if (this.mode === 'cloud') { const s = await this.col().get(); return s.docs.map(d => d.data()); }
+      return (await this.tx('cases', 'readonly', os => os.getAll())) || [];
+    },
+    async put(c) {
+      c.updated = new Date().toISOString();
+      const clean = JSON.parse(JSON.stringify(c));
+      if (this.mode === 'cloud') return this.col().doc(c.id).set(clean);
+      return this.tx('cases', 'readwrite', os => os.put(clean, clean.id));
+    },
+    async del(id) {
+      if (this.mode === 'cloud') return this.col().doc(id).delete();
+      return this.tx('cases', 'readwrite', os => os.delete(id));
+    },
+    async getSettings() {
+      if (this.mode === 'cloud') { const s = await this.db.doc('data/users/' + this.uid + '/meta/settings').get(); return s.exists ? s.data() : null; }
+      return (await this.tx('meta', 'readonly', os => os.get('settings'))) || null;
+    },
+    async putSettings(s) {
+      if (this.mode === 'cloud') return this.db.doc('data/users/' + this.uid + '/meta/settings').set(JSON.parse(JSON.stringify(s)));
+      return this.tx('meta', 'readwrite', os => os.put(JSON.parse(JSON.stringify(s)), 'settings'));
+    },
+    async savePhoto(blob) {
+      if (this.assets) { const a = await this.assets.upload(blob); return { store: 'asset', aid: a.id, url: a.url }; }
+      const id = 'p' + uid();
+      await this.tx('p', 'readwrite', os => os.put(blob, id));
+      return { store: 'idb', aid: id };
+    },
+    async photoBlob(p) {
+      if (p.store === 'asset') { const r = await fetch(p.url || ('/_blob/' + p.aid)); return r.blob(); }
+      return this.tx('p', 'readonly', os => os.get(p.aid));
+    },
+    async photoURL(p) {
+      if (p.store === 'asset') return p.url || ('/_blob/' + p.aid);
+      if (!this._urls) this._urls = {};
+      if (this._urls[p.aid]) return this._urls[p.aid];
+      try { const b = await this.photoBlob(p); return (this._urls[p.aid] = b ? URL.createObjectURL(b) : ''); } catch (e) { return ''; }
+    },
+    async deletePhoto(p) {
+      try { if (p.store === 'asset' && this.assets) await this.assets.delete(p.aid); else if (p.store === 'idb') await this.tx('p', 'readwrite', os => os.delete(p.aid)); } catch (e) { }
+    },
+    async save(filename, data) {
+      if (this.downloads) { try { await this.downloads.save({ filename, data }); return 'saved'; } catch (e) { if (e && e.code === 'declined') return 'declined'; throw new Error(e && e.message || 'Saving was not possible here.'); } }
+      // plain browser (file opened directly): normal download
+      const b = data instanceof Blob ? data : new Blob([data]); const a = document.createElement('a');
+      a.href = URL.createObjectURL(b); a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000); return 'saved';
+    }
+  };
+  VS.Store = Store;
+
+  /* ---------------- state ---------------- */
+  const st = { cases: [], settings: null, view: 'register', caseId: null, tab: 'assignment', filter: 'all', q: '', saving: '', confirm: null, busy: '' };
+  VS.state = st;
+  const rules = () => Object.assign({}, VS.DEFAULT_RULES, (st.settings && st.settings.rules) || {});
+  const cur = () => st.cases.find(c => c.id === st.caseId);
+
+  function newCase(extra) {
+    const last = st.cases.slice().sort((a, b) => (b.updated || '').localeCompare(a.updated || ''))[0];
+    const yr = new Date().getFullYear(), seq = st.cases.filter(c => (c.ref || '').startsWith('V/' + yr)).length + 1;
+    return Object.assign({
+      id: uid(), created: new Date().toISOString(), status: 'Assigned', ref: `V/${yr}/${String(seq).padStart(3, '0')}`,
+      bank: last ? last.bank : 'Indian Overseas Bank', ptype: 'Land + Building', cstatus: 'Completed / existing', fmtOverride: 'Auto',
+      branch: '', assigned: todayISO(), due: '', valDate: todayISO(), fee: '', feeReceived: '', billNo: '',
+      f: { purpose: 'to find the value of property offered as security to the bank.', inspect_date: todayISO(), bldg_rate: 1600 },
+      comps: [], photos: [], remarks: '', lat: '', lon: ''
+    }, extra || {});
+  }
+
+  function exampleCase() {
+    return newCase({
+      example: true, ref: 'EXAMPLE', status: 'Valued', bank: 'Union Bank of India', branch: 'Manish Nagar, Nagpur', fee: 3500, feeReceived: 0,
+      lat: '21.08743', lon: '79.06412',
+      f: {
+        purpose: 'to find the value of property offered as security to the bank.', inspect_date: todayISO(), owner: 'Shri A. B. Sharma (example)',
+        owner_addr: 'Plot 12, Somalwada, Nagpur 440025', plot_no: '12', survey_no: 'Kh. No. 45/2', locality: 'Somalwada, Manish Nagar', town: 'Nagpur', district: 'Nagpur',
+        area_use: 'residential', loc_class: 'middle class', local_body: 'Municipal Corporation', bN: '9 m wide road', bS: 'Plot no. 13', bE: 'Plot no. 11', bW: 'open space',
+        tenant: 'no', freehold: 'free-hold', dimN: 10, dimE: 20, extent: 200, development: 'well-developed', level: 'level', shape: 'rectangular', approved_layout: 'yes;',
+        road_type: 'black-topped/tarred road', road_width: 9, water: 'available', sewer: 'available', power: 'available', pmr: 2000, adopted: 1800, glr_land: 15000,
+        bldg_type: 'residential', construction: 'rcc framed structure', year: 2010, upper_floors: 1, gf_area: 100, gf_rate: 1800, glr_bldg: 20000, condition: 'well-maintained',
+        permission: 'NMC sanction no. BP/123/2009 (example)', x_portico: 50000, bldg_rate: 1600
+      },
+      comps: [
+        { date: '2026-03-10', loc: 'Somalwada, 200 m away', area: 1800, unit: 'sqft', price: 3420000, src: 'Sale deed (example)', adjLoc: 0, adjSize: 0, adjOther: 0 },
+        { date: '2025-11-02', loc: 'Manish Nagar main road', area: 2150, unit: 'sqft', price: 4300000, src: 'Broker quote (example)', adjLoc: -5, adjSize: 0, adjOther: 0 },
+        { date: '2026-07-18', loc: 'Besa road', area: 1500, unit: 'sqft', price: 2850000, src: 'Sale deed (example)', adjLoc: 5, adjSize: 0, adjOther: 0 }
+      ]
+    });
+  }
+
+  /* ---------------- persistence ---------------- */
+  let saveT = null, pending = null;
+  function flush() { if (pending) { clearTimeout(saveT); const c = pending; pending = null; Store.put(c).catch(() => { }); } }
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+  function touch(c) {
+    st.saving = 'Saving…'; paintStatus(); pending = c;
+    clearTimeout(saveT);
+    saveT = setTimeout(async () => { pending = null;
+      try { await Store.put(c); st.saving = Store.mode === 'cloud' ? 'Saved' : 'Saved on this device'; }
+      catch (e) { st.saving = 'Not saved: ' + e.message; }
+      paintStatus();
+    }, 600);
+  }
+  function paintStatus() { const el = $('#savestate'); if (el) { el.textContent = st.saving; el.dataset.bad = /Not saved/.test(st.saving) ? '1' : ''; } }
+
+  /* ---------------- helpers ---------------- */
+  const get = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+  const set = (o, path, v) => { const ks = path.split('.'); let a = o; for (let i = 0; i < ks.length - 1; i++) { if (a[ks[i]] == null) a[ks[i]] = /^\d+$/.test(ks[i + 1]) ? [] : {}; a = a[ks[i]]; } a[ks[ks.length - 1]] = v; };
+  const chip = (txt, cls) => `<span class="chip ${cls || ''}">${h(txt)}</span>`;
+  const STATUSES = ['Assigned', 'Inspected', 'Valued', 'Delivered', 'Cancelled'];
+  const statusCls = s => ({ Assigned: 'c-blue', Inspected: 'c-amber', Valued: 'c-teal', Delivered: 'c-green', Cancelled: 'c-grey' })[s] || '';
+
+  function input(path, label, type, opts) {
+    const c = cur(); const v = get(c, path); const id = 'i_' + path.replace(/\W/g, '_');
+    opts = opts || {};
+    let ctl;
+    if (type === 'select') ctl = `<select id="${id}" data-k="${path}">${(opts.options || []).map(o => `<option ${String(o) === String(v ?? '') ? 'selected' : ''} value="${h(o)}">${h(o === '' ? '—' : o)}</option>`).join('')}</select>`;
+    else if (type === 'list') ctl = `<input id="${id}" data-k="${path}" list="${id}_l" value="${h(v ?? '')}" autocomplete="off"><datalist id="${id}_l">${(opts.options || []).map(o => `<option value="${h(o)}">`).join('')}</datalist>`;
+    else if (type === 'area') ctl = `<textarea id="${id}" data-k="${path}" rows="${opts.rows || 3}">${h(v ?? '')}</textarea>`;
+    else ctl = `<input id="${id}" data-k="${path}" type="${type === 'num' ? 'text' : type}" ${type === 'num' ? 'inputmode="decimal" data-num="1"' : ''} value="${h(v ?? '')}" ${opts.ph ? `placeholder="${h(opts.ph)}"` : ''}>`;
+    return `<label class="fld ${opts.wide ? 'wide' : ''}" for="${id}"><span>${h(label)}${opts.unit ? ` <em>${h(opts.unit)}</em>` : ''}</span>${ctl}${opts.hint ? `<small>${opts.hint}</small>` : ''}</label>`;
+  }
+  function specField(key, extra) {
+    const f = FIELD[key]; if (!f) return '';
+    const p = 'f.' + key;
+    const unitM = (f.label.match(/\(([^)]*)\)\s*$/) || [])[1];
+    const label = unitM ? f.label.replace(/\s*\([^)]*\)\s*$/, '') : f.label;
+    if (f.type === 'select') return input(p, label, 'list', Object.assign({ options: f.options || [] }, extra));
+    if (f.type === 'district') return input(p, label, 'list', Object.assign({ options: Object.keys(SPEC.districts) }, extra));
+    if (f.type === 'date') return input(p, label, 'date', extra);
+    if (['num', 'amt', 'pct'].includes(f.type)) return input(p, label, 'num', Object.assign({ unit: unitM || (f.type === 'amt' ? 'Rs' : '') }, extra));
+    return input(p, label, 'text', Object.assign({ unit: unitM }, extra));
+  }
+  const group = (title, body, note) => `<section class="grp"><h3>${h(title)}</h3>${note ? `<p class="note">${note}</p>` : ''}<div class="grid">${body}</div></section>`;
+
+  /* ---------------- views ---------------- */
+  function render() {
+    const root = $('#view'); if (!root) return;
+    document.body.dataset.view = st.view;
+    $('#nav').innerHTML = [['register', 'Register'], ['case', 'Case'], ['settings', 'Settings']].map(([k, t]) =>
+      `<button class="nav ${st.view === k ? 'on' : ''}" data-nav="${k}" ${k === 'case' && !cur() ? 'disabled' : ''}>${t}</button>`).join('');
+    if (st.view === 'register') root.innerHTML = viewRegister();
+    else if (st.view === 'settings') root.innerHTML = viewSettings();
+    else if (cur()) root.innerHTML = viewCase();
+    else { st.view = 'register'; root.innerHTML = viewRegister(); }
+    paintLive(); paintStatus();
+    if (st.view === 'case' && st.tab === 'photos') paintPhotos();
+    const on = document.querySelector('.tab.on'); if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (e) { } }
+  }
+
+  function viewRegister() {
+    const S = rules();
+    const rows = st.cases.slice().sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+    const q = st.q.toLowerCase();
+    const vis = rows.filter(c => (st.filter === 'all' || (st.filter === 'open' ? !['Delivered', 'Cancelled'].includes(c.status) : c.status === st.filter)) &&
+      (!q || [c.ref, c.f && c.f.owner, c.bank, c.branch, c.f && c.f.locality].join(' ').toLowerCase().includes(q)));
+    const now = new Date(), ym = todayISO().slice(0, 7);
+    const open = rows.filter(c => !['Delivered', 'Cancelled'].includes(c.status));
+    const overdue = open.filter(c => c.due && c.due < todayISO());
+    const delivM = rows.filter(c => c.status === 'Delivered' && (c.delivered || c.updated || '').startsWith(ym));
+    const billed = rows.filter(c => c.status !== 'Cancelled').reduce((s, c) => s + VS.num(c.fee), 0);
+    const recd = rows.reduce((s, c) => s + VS.num(c.feeReceived), 0);
+    const tat = rows.filter(c => c.status === 'Delivered' && c.delivered && c.assigned).map(c => (new Date(c.delivered) - new Date(c.assigned)) / 864e5);
+    const months = []; for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push(localISO(d).slice(0, 7)); }
+    const perM = months.map(m => rows.filter(c => (c.assigned || c.created || '').startsWith(m)).length);
+    const mx = Math.max(1, ...perM);
+    const spark = `<svg viewBox="0 0 180 56" class="spark" role="img" aria-label="Cases assigned per month">${perM.map((v, i) => `<rect x="${i * 30 + 4}" y="${44 - v / mx * 36}" width="20" height="${Math.max(1, v / mx * 36)}" rx="2"></rect><text x="${i * 30 + 14}" y="54">${new Date(months[i] + '-01T12:00').toLocaleString('en-IN', { month: 'short' })}</text><text x="${i * 30 + 14}" y="${40 - v / mx * 36}" class="v">${v || ''}</text>`).join('')}</svg>`;
+    const list = vis.length ? vis.map(c => {
+      const r = VS.compute(c, S); const ch = VS.checks(c, r, S); const er = ch.filter(x => x.sev === 'error').length;
+      const late = c.due && c.due < todayISO() && !['Delivered', 'Cancelled'].includes(c.status);
+      return `<button class="case-row" data-open="${c.id}">
+        <span class="cr-ref">${h(c.ref)}${c.example ? ' ' + chip('example', 'c-grey') : ''}</span>
+        <span class="cr-main"><b>${h((c.f && c.f.owner) || 'Owner not entered')}</b><small>${h([c.f && c.f.locality, c.f && c.f.town].filter(Boolean).join(', ') || c.ptype)}</small></span>
+        <span class="cr-bank">${h(c.bank)}<small>${h(r.fmt.sheet)}</small></span>
+        <span class="cr-val">${r.fmv ? VS.rs(r.fmt.uc ? r.fmvNow : r.fmv) : '–'}</span>
+        <span class="cr-st">${chip(c.status, statusCls(c.status))}${er ? chip(er + ' to fix', 'c-red') : ''}${late ? chip('overdue', 'c-red') : ''}</span>
+      </button>`;
+    }).join('') : `<div class="empty"><b>${st.cases.length ? 'No cases match this filter.' : 'No cases yet.'}</b><p>${st.cases.length ? 'Clear the search or pick another filter.' : 'Start with New case. Everything you enter is saved as you type.'}</p></div>`;
+    return `<div class="reg">
+      <div class="reg-head"><div><h1>Case register</h1><p class="sub">${Store.mode === 'cloud' ? 'Saved to your Claude account – available on phone and computer.' : 'Saved in this browser only.'}</p></div>
+        <div class="head-acts"><label class="btn" for="casefile_in">Open case file</label><input id="casefile_in" type="file" accept=".json,application/json" hidden><button class="btn primary" data-act="new">New case</button></div></div>
+      ${st.outmsg && st.view === 'register' ? `<p class="busy">${h(st.outmsg)}</p>` : ''}
+      <div class="kpis">
+        <div class="kpi"><span>Open cases</span><b>${open.length}</b><small>${overdue.length ? overdue.length + ' overdue' : 'none overdue'}</small></div>
+        <div class="kpi"><span>Delivered this month</span><b>${delivM.length}</b><small>${tat.length ? 'avg ' + (tat.reduce((a, b) => a + b, 0) / tat.length).toFixed(1) + ' days to deliver' : 'turnaround shows after delivery'}</small></div>
+        <div class="kpi"><span>Fees outstanding</span><b>${VS.rs(billed - recd)}</b><small>${VS.rs(recd)} received of ${VS.rs(billed)}</small></div>
+        <div class="kpi chart"><span>Cases per month</span>${spark}</div>
+      </div>
+      <div class="filters"><input id="q" type="search" placeholder="Search owner, ref, bank, locality" value="${h(st.q)}">
+        ${['all', 'open', ...STATUSES].map(s => `<button class="fchip ${st.filter === s ? 'on' : ''}" data-filter="${s}">${s === 'all' ? 'All' : s === 'open' ? 'Open' : s}</button>`).join('')}</div>
+      <div class="case-list">${list}</div></div>`;
+  }
+
+  const TABS = [['assignment', 'Assignment'], ['property', 'Property'], ['land', 'Land & rates'], ['building', 'Building'], ['flat', 'Flat'], ['comps', 'Sale instances'], ['photos', 'Photos'], ['valuation', 'Valuation'], ['checks', 'Checks'], ['output', 'Output']];
+  function tabsFor(F) { return TABS.filter(([k]) => !(k === 'building' && (F.isFlat || F.vacant)) && !(k === 'flat' && !F.isFlat)); }
+
+  function viewCase() {
+    const c = cur(), S = rules(), r = VS.compute(c, S), F = r.fmt, ch = VS.checks(c, r, S);
+    const tabs = tabsFor(F); if (!tabs.find(t => t[0] === st.tab)) st.tab = 'assignment';
+    const nErr = ch.filter(x => x.sev === 'error').length, nW = ch.filter(x => x.sev === 'warn').length;
+    const body = ({ assignment: tabAssignment, property: tabProperty, land: tabLand, building: tabBuilding, flat: tabFlat, comps: tabComps, photos: tabPhotos, valuation: tabValuation, checks: tabChecks, output: tabOutput })[st.tab](c, r, S, ch);
+    return `<div class="case">
+      <div class="case-head"><div><p class="eyebrow">${h(c.ref)} · ${h(VS.FORMAT_NAMES[F.fam] || F.fam)} · report sheet <b>${h(F.sheet)}</b></p>
+        <h1>${h((c.f && c.f.owner) || 'New case')}</h1></div>
+        <div class="head-acts"><select id="st_status" data-k="status" aria-label="Case status">${STATUSES.map(s => `<option ${s === c.status ? 'selected' : ''}>${s}</option>`).join('')}</select>
+        <button class="btn" data-act="xfer" title="One file with this case and its photos, to open on your phone or computer">Send to other device</button><button class="btn" data-act="dup">Duplicate</button><button class="btn danger-ghost" data-act="del">Delete</button></div></div>
+      ${st.confirm === 'del' ? `<div class="confirm">Delete ${h(c.ref)} and its photos? This cannot be undone. <button class="btn danger" data-act="del-yes">Delete case</button><button class="btn" data-act="del-no">Keep</button></div>` : ''}
+      <div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" class="tab ${st.tab === k ? 'on' : ''}" data-tab="${k}">${t}${k === 'checks' && (nErr + nW) ? ` <i class="${nErr ? 'red' : 'amb'}">${nErr + nW}</i>` : ''}${k === 'photos' ? ` <i class="n">${(c.photos || []).length}</i>` : ''}</button>`).join('')}</div>
+      <div class="tabbody">${body}</div></div>`;
+  }
+
+  function tabAssignment(c) {
+    return group('Bank and report format', [
+      input('bank', 'Bank / purpose', 'select', { options: VS.BANKS.map(b => b[0]) }),
+      input('ptype', 'Property type', 'select', { options: VS.PTYPES }),
+      input('cstatus', 'Construction status', 'select', { options: VS.CSTATUS }),
+      input('fmtOverride', 'Report format', 'select', { options: VS.FORMATS, hint: '“Auto” follows the bank. Choose a format to override, e.g. BOI on the BOM format.' }),
+      input('branch', 'Branch', 'text'), input('ref', 'Our reference no.', 'text')].join('')) +
+      group('Dates', [input('assigned', 'Assigned on', 'date'), input('due', 'Report due by', 'date'), specField('inspect_date'), input('valDate', 'Date of valuation', 'date'), input('delivered', 'Delivered on', 'date')].join('')) +
+      group('Purpose', specField('purpose', { wide: true })) +
+      group('Fees', [input('fee', 'Fee', 'num', { unit: 'Rs' }), input('feeReceived', 'Received', 'num', { unit: 'Rs' }), input('billNo', 'Bill no.', 'text')].join(''));
+  }
+  function tabProperty(c) {
+    const gm = VS.num(c.lat) && VS.num(c.lon) ? `<a class="lnk" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${VS.num(c.lat)},${VS.num(c.lon)}">Open in Google Maps ↗</a>` : '';
+    const ph = (c.photos || []).find(p => p.lat && p.lon);
+    return group('Owner and borrower', ['owner', 'owner_addr', 'borrower'].map(k => specField(k, { wide: k !== 'borrower' })).join('')) +
+      group('Address', ['plot_no', 'survey_no', 'house_no', 'locality', 'town', 'district', 'area_use', 'loc_class', 'local_body', 'tenant', 'freehold'].map(k => specField(k)).join('')) +
+      group('Boundaries as per deed', ['bN', 'bS', 'bE', 'bW'].map(k => specField(k)).join(''), 'Boundaries at site are taken as the same in the Excel report. Change them there if they differ.') +
+      group('Location', input('lat', 'Latitude', 'num', { ph: '21.14' }) + input('lon', 'Longitude', 'num', { ph: '79.08' }) +
+        `<div class="fld wide geo">${gm}${ph && !VS.num(c.lat) ? `<button class="btn" data-act="geo-from-photo">Use location from photo ${h(ph.caption || '')}</button>` : ''}<small>Photos taken with location turned on fill this in automatically.</small></div>`);
+  }
+  function tabLand(c, r, S) {
+    const F = r.fmt;
+    if (F.isFlat) return group('Land under the building', [specField('extent', { hint: 'Area of the entire plot' }), specField('undivided'), specField('glr_land')].join(''));
+    const dimA = VS.num(c.f.dimN) * VS.num(c.f.dimE);
+    return group('Plot', [specField('dimN'), specField('dimE'), specField('extent', { hint: dimA ? `Dimensions give ${VS.fmtN(dimA, 2)} sqm. <button class="mini" data-act="use-dim">Use it</button>` : 'Least of the deed area and the site area.' }), specField('shape'), specField('level'), specField('corner'), specField('development'), specField('approved_layout')].join('')) +
+      group('Road and services', ['road_type', 'road_width', 'water', 'sewer', 'power'].map(k => specField(k)).join('')) +
+      group('Rates', [specField('pmr'), specField('adopted', { hint: (F.fam === 'CAN' || F.fam === 'CBDT') ? `This format adopts ${Math.round(S.ladj * 100)}% of the prevailing rate: Rs ${VS.fmtN(VS.num(c.f.pmr) * S.ladj)}/sqft.` : 'Leave blank to use the prevailing rate.' }), specField('glr_land')].join(''));
+  }
+  function tabBuilding(c, r, S) {
+    const fl = r.floors, F = r.fmt;
+    const rowsF = [['bsmt', 'Basement', 'bsmt_area'], ['gf', 'Ground floor', 'gf_area'], ['ff', 'First floor', 'ff_area'], ['sf', 'Second floor', 'sf_area'], ['tf', 'Third floor', 'tf_area']];
+    const tbl = `<div class="tblwrap"><table class="calc"><thead><tr><th>Floor</th><th>Area sqm</th><th>Rate Rs/sqft</th><th>Value</th></tr></thead><tbody>${rowsF.map(([k, nm, key]) => {
+      const a = fl.area[k]; const auto = !VS.has(c.f[key]) && k !== 'gf' && k !== 'bsmt' && a;
+      return `<tr><td>${nm}</td><td><input class="cell" data-k="f.${key}" data-num="1" inputmode="decimal" value="${h(c.f[key] ?? '')}" placeholder="${auto ? VS.fmtN(a, 2) + ' (same as GF)' : ''}" aria-label="${nm} area"></td><td class="num">${a ? VS.fmtN(fl.rate[k]) : ''}</td><td class="num">${a ? VS.rs(VS.round(a * 10.76 * fl.rate[k])) : ''}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+    return group('Building', ['tech', 'bldg_type', 'construction', 'year', 'upper_floors', 'condition', 'permission'].map(k => specField(k, k === 'tech' ? { hint: 'Leave blank for an existing building.' } : k === 'permission' ? { wide: true } : {})).join('') + (F.uc ? specField('stage') : '')) +
+      group('Floor areas and rates', specField('gf_rate', { hint: `Upper floor rates follow the rules in Settings: first floor ${S.f1} × ground, each floor above × ${S.f2}.` }) + specField('glr_bldg') + `<div class="wide">${tbl}</div>`) +
+      group('Extra items, amenities and services', SPEC.fields.filter(f => f.section === 'extra').map(f => specField(f.key)).join(''), 'Lump-sum values in rupees.');
+  }
+  function tabFlat(c, r) {
+    return group('Flat', ['flat_no', 'flat_floor', 'bldg_floors', 'units', 'construction', 'year', 'lift', 'parking', 'marketability', 'permission'].map(k => specField(k)).join('') + (r.fmt.uc ? specField('stage') : '')) +
+      group('Areas and rates', [specField('bua', { hint: r.bua ? `Super built-up ${VS.fmtN(r.sbua, 2)} sqm · carpet ${VS.fmtN(r.carpet, 2)} sqm` : '' }), specField('comp_rate'), specField('bldg_rate', { hint: 'Part of the composite rate for the building and services. It is depreciated by age.' }), specField('glr_land'), specField('glr_flat')].join(''));
+  }
+  function tabComps(c, r, S) {
+    const cs = VS.comps(c, S), F = r.fmt;
+    const rows = (c.comps || []).map((x, i) => {
+      const k = cs.rows[i];
+      return `<tr class="${k.outlier ? 'out' : ''}">
+        <td><input class="cell" type="date" data-k="comps.${i}.date" value="${h(x.date || '')}" aria-label="Date"></td>
+        <td><input class="cell w" data-k="comps.${i}.loc" value="${h(x.loc || '')}" aria-label="Location"></td>
+        <td><input class="cell" data-num="1" inputmode="decimal" data-k="comps.${i}.area" value="${h(x.area ?? '')}" aria-label="Area"></td>
+        <td><select class="cell" data-k="comps.${i}.unit" aria-label="Unit"><option ${x.unit !== 'sqm' ? 'selected' : ''}>sqft</option><option ${x.unit === 'sqm' ? 'selected' : ''}>sqm</option></select></td>
+        <td><input class="cell" data-num="1" inputmode="decimal" data-k="comps.${i}.price" value="${h(x.price ?? '')}" aria-label="Price"></td>
+        <td><input class="cell s" data-num="1" data-k="comps.${i}.adjLoc" value="${h(x.adjLoc ?? '')}" aria-label="Location adjustment %"></td>
+        <td><input class="cell s" data-num="1" data-k="comps.${i}.adjSize" value="${h(x.adjSize ?? '')}" aria-label="Size adjustment %"></td>
+        <td><input class="cell s" data-num="1" data-k="comps.${i}.adjOther" value="${h(x.adjOther ?? '')}" aria-label="Other adjustment %"></td>
+        <td class="num">${k.valid ? VS.fmtN(k.rate) : ''}</td><td class="num">${k.valid ? '+' + (k.tAdj * 100).toFixed(1) + '%' : ''}</td>
+        <td class="num"><b>${k.valid ? VS.fmtN(k.adjRate) : ''}</b>${k.outlier ? '<small>outlier</small>' : ''}</td>
+        <td><input class="cell w" data-k="comps.${i}.src" value="${h(x.src || '')}" aria-label="Source"></td>
+        <td><button class="mini" data-act="comp-del" data-i="${i}" aria-label="Remove">✕</button></td></tr>`;
+    }).join('');
+    const target = F.isFlat ? 'comp_rate' : 'adopted';
+    const stats = cs.n ? `<div class="stats"><div><span>Instances used</span><b>${cs.kept} of ${cs.n}</b></div><div><span>Median</span><b>${VS.fmtN(cs.median)}</b></div><div><span>Mean</span><b>${VS.fmtN(cs.mean)}</b></div><div><span>Range</span><b>${VS.fmtN(cs.min)} – ${VS.fmtN(cs.max)}</b></div><div><span>Spread (CV)</span><b class="${cs.cv > .15 ? 'red' : ''}">${(cs.cv * 100).toFixed(1)}%</b></div><div class="sug"><span>Indicated rate</span><b>Rs ${VS.fmtN(cs.suggested)}/sqft</b><button class="btn primary" data-act="use-comp">Use as ${F.isFlat ? 'composite' : 'adopted'} rate</button></div></div>` : '';
+    return `<section class="grp"><h3>Comparable sale instances</h3><p class="note">Rates are brought to the valuation date at ${S.esc}% a year (Settings), then adjusted by your location, size and other percentages. An instance more than 2.5 robust standard deviations from the median is left out automatically once there are four or more.</p>
+      <div class="tblwrap"><table class="calc comps"><thead><tr><th>Date</th><th>Location</th><th>Area</th><th>Unit</th><th>Price Rs</th><th>Loc %</th><th>Size %</th><th>Other %</th><th>Rate</th><th>Time</th><th>Adjusted</th><th>Source</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="13" class="empty-row">No sale instances yet.</td></tr>`}</tbody></table></div>
+      <button class="btn" data-act="comp-add">Add sale instance</button>${stats}</section>`;
+  }
+  function tabPhotos(c) {
+    const S = rules();
+    return `<section class="grp"><h3>Photographs</h3>
+      <p class="note">Each photo is turned upright, given automatic brightness and contrast, reduced to ${S.photoPx}px and compressed to under ${S.photoKB} KB${S.stamp ? ', with the reference, date and location printed on it' : ''}. Change this in Settings.</p>
+      <div class="ph-add"><label class="btn primary" for="ph_in">Add photos</label><input id="ph_in" type="file" accept="image/*" multiple hidden>
+      <label class="btn" for="ph_cam">Take photo</label><input id="ph_cam" type="file" accept="image/*" capture="environment" hidden>
+      <span id="ph_busy" class="busy">${h(st.busy)}</span></div>
+      <div id="ph_grid" class="ph-grid"></div></section>`;
+  }
+  async function paintPhotos() {
+    const c = cur(), g = $('#ph_grid'); if (!c || !g) return;
+    const ps = c.photos || [];
+    if (!ps.length) { g.innerHTML = `<div class="empty"><b>No photos yet.</b><p>Add the front view, the road, the interior and the owner or representative at the property.</p></div>`; return; }
+    g.innerHTML = ps.map((p, i) => `<figure class="ph"><div class="ph-img"><img alt="${h(p.caption || 'Photo ' + (i + 1))}" data-ph="${i}"></div>
+      <figcaption><input class="cell w" data-k="photos.${i}.caption" value="${h(p.caption || '')}" placeholder="Caption, e.g. Front view" aria-label="Caption">
+      <small>${p.kb} KB · ${p.w}×${p.h}${p.origKB ? ` · was ${p.origKB} KB` : ''}${p.lat ? ' · GPS ✓' : ''}${p.levels && p.levels.applied ? ' · auto-corrected' : ''}</small>
+      <span class="ph-acts"><button class="mini" data-act="ph-up" data-i="${i}" aria-label="Move earlier" ${i ? '' : 'disabled'}>↑</button><button class="mini" data-act="ph-dn" data-i="${i}" aria-label="Move later" ${i < ps.length - 1 ? '' : 'disabled'}>↓</button><button class="mini" data-act="ph-del" data-i="${i}" aria-label="Remove photo">✕</button></span></figcaption></figure>`).join('');
+    for (const im of g.querySelectorAll('img[data-ph]')) { const p = ps[+im.dataset.ph]; Store.photoURL(p).then(u => { if (u) im.src = u; }); }
+  }
+  async function addPhotos(files) {
+    const c = cur(), S = rules(); if (!c) return;
+    const list = [...files]; let done = 0, errs = [];
+    for (const file of list) {
+      st.busy = `Processing ${done + 1} of ${list.length}…`; const b = $('#ph_busy'); if (b) b.textContent = st.busy;
+      try {
+        const out = await VS.processPhoto(file, { maxPx: S.photoPx, targetKB: S.photoKB, autofix: S.autofix, stamp: S.stamp, ref: c.ref, lat: c.lat, lon: c.lon });
+        const saved = await Store.savePhoto(out.blob);
+        const cap = ['Front view', 'Approach road', 'Side view', 'Interior', 'Owner / representative at property', 'Rear view'][(c.photos || []).length] || '';
+        c.photos = c.photos || [];
+        c.photos.push(Object.assign(saved, { id: uid(), caption: cap, kb: out.kb, w: out.w, h: out.h, origKB: out.origKB, lat: out.exif.lat || '', lon: out.exif.lon || '', taken: out.exif.taken || '', levels: out.levels }));
+        if (!VS.num(c.lat) && out.exif.lat) { c.lat = out.exif.lat.toFixed(6); c.lon = out.exif.lon.toFixed(6); }
+        done++;
+      } catch (e) { errs.push(file.name + ': ' + e.message); }
+    }
+    st.busy = errs.length ? `Added ${done}. Not added: ${errs.join('; ')}` : `Added ${done} photo${done === 1 ? '' : 's'}.`;
+    touch(c); render();
+  }
+  function tabValuation(c, r, S) {
+    const F = r.fmt;
+    const groups = [...new Set(r.lines.map(l => l.group))];
+    const trace = groups.map(g => `<tbody><tr class="g"><th colspan="3">${h(g)}</th></tr>${r.lines.filter(l => l.group === g).map(l => `<tr><td>${h(l.label)}</td><td class="fx">${h(l.formula)}</td><td class="num">${l.unit === 'Rs' ? VS.rs(l.value) : VS.fmtN(l.value, 2) + ' ' + h(l.unit)}</td></tr>`).join('')}</tbody>`).join('');
+    // sensitivity
+    const sens = [];
+    const vary = (path, mult) => { const cc = JSON.parse(JSON.stringify(c)); const v = VS.num(get(cc, path)); if (!v) return null; set(cc, path, v * mult); const rr = VS.compute(cc, S); return F.uc ? rr.fmvNow : rr.fmv; };
+    const base = F.uc ? r.fmvNow : r.fmv;
+    const items = F.isFlat ? [['Composite rate', 'f.comp_rate'], ['Built-up area', 'f.bua']] : [['Land rate', VS.has(c.f.adopted) && !(F.fam === 'CAN' || F.fam === 'CBDT') ? 'f.adopted' : 'f.pmr'], ['Construction rate', 'f.gf_rate'], ['Plot area', 'f.extent']];
+    for (const [nm, p] of items) { const lo = vary(p, .9), hi = vary(p, 1.1); if (lo !== null) sens.push([nm, lo, hi]); }
+    return `<div class="valtop"><div class="big"><span>${F.uc ? 'Value as on date' : 'Fair market value'}</span><b>${VS.rs(base)}</b><small>${h(VS.words(base))}</small></div>
+      ${F.uc ? `<div class="mid"><span>After completion</span><b>${VS.rs(r.fmv)}</b></div>` : ''}
+      <div class="mid"><span>Realizable (${Math.round(S.rv * 100)}%)</span><b>${VS.rs(r.rv)}</b></div><div class="mid"><span>Forced sale (${Math.round(S.fsv * 100)}%)</span><b>${VS.rs(r.fsv)}</b></div>
+      <div class="mid"><span>Guideline value</span><b>${r.gv === null ? '–' : VS.rs(r.gv)}</b>${r.gv ? `<small>market is ${(base / r.gv).toFixed(2)} × guideline</small>` : ''}</div></div>
+      <section class="grp"><h3>How the value is worked out</h3><p class="note">The same rules as the Excel workbook (${h(F.sheet)} sheet). The Excel import compares the two and tells you if they disagree.</p>
+      <div class="tblwrap"><table class="calc trace">${trace}</table></div></section>
+      ${sens.length ? `<section class="grp"><h3>Sensitivity</h3><p class="note">What the value becomes if one input is 10% lower or higher.</p><div class="tblwrap"><table class="calc"><thead><tr><th>Input</th><th class="r">−10%</th><th class="r">As adopted</th><th class="r">+10%</th></tr></thead><tbody>${sens.map(([nm, lo, hi]) => `<tr><td>${h(nm)}</td><td class="num">${VS.rs(lo)}</td><td class="num">${VS.rs(base)}</td><td class="num">${VS.rs(hi)}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
+      <section class="grp"><h3>Remarks for the report</h3>${input('remarks', 'Valuation approach and locality remarks', 'area', { rows: 6, wide: true })}
+      ${Store.sample ? `<button class="btn" data-act="ai-remarks">${st.busy === 'ai' ? 'Drafting…' : 'Draft with Claude'}</button><small class="note"> Uses only the facts entered in this case. Read and edit before use.</small>` : ''}</section>`;
+  }
+  function tabChecks(c, r, S, ch) {
+    if (!ch.length) return `<div class="empty ok"><b>All checks passed.</b><p>Nothing is missing or inconsistent in this case.</p></div>`;
+    const lab = { error: 'Must fix', warn: 'Review', info: 'Note' };
+    return ['error', 'warn', 'info'].map(sv => { const xs = ch.filter(x => x.sev === sv); return xs.length ? `<section class="grp"><h3>${lab[sv]} (${xs.length})</h3><ul class="checks">${xs.map(x => `<li class="${sv}"><span>${h(x.msg)}</span><button class="mini" data-tab="${x.tab}">Go to</button></li>`).join('')}</ul></section>` : ''; }).join('');
+  }
+  function tabOutput(c, r, S, ch) {
+    const ex = VS.excelFile(c, r, SPEC), nErr = ch.filter(x => x.sev === 'error').length;
+    return `${nErr ? `<div class="confirm warnbox">${nErr} item(s) must be fixed first. <button class="mini" data-tab="checks">See checks</button></div>` : ''}
+      <section class="grp out"><h3>1 · Bank report in Excel</h3><p class="note">Download the hand-off file, then in <b>Valuation_Master.xlsm</b> click <b>Import from Valuation Studio</b>. It fills ${ex.used.length} answers into the <b>${h(ex.sheet)}</b> inputs, opens the report and cross-checks the values against this page.</p>
+        <button class="btn primary" data-act="dl-excel">Download Excel hand-off file</button>
+        ${ex.missing.length ? `<details><summary>${ex.missing.length} answers have no place in this bank's format</summary><p class="note">${ex.missing.map(h).join(' · ')}</p></details>` : ''}</section>
+      <section class="grp out"><h3>2 · Photos for the report</h3><p class="note">All ${(c.photos || []).length} processed photos in one zip, numbered in order. Unzip, then use <b>Insert Photos</b> in the workbook.</p><button class="btn" data-act="dl-photos" ${(c.photos || []).length ? '' : 'disabled'}>Download photos (.zip)</button></section>
+      <section class="grp out"><h3>3 · Working notes and summary</h3><p class="note">A complete, printable record: summary, property details, calculation, sale instances, checks, photos with captions and location. Open it in your browser and print to PDF. Keep it with the file copy, or attach it as an annexure.</p><button class="btn" data-act="dl-summary">Download summary (.html)</button></section>
+      <p id="outmsg" class="busy">${h(st.outmsg || '')}</p>`;
+  }
+
+  function viewSettings() {
+    const s = st.settings || {}; const R = rules(); const p = s.profile || {};
+    const rf = (k, label, unit, hint) => `<label class="fld" for="r_${k}"><span>${h(label)}${unit ? ` <em>${h(unit)}</em>` : ''}</span><input id="r_${k}" data-r="${k}" value="${h(typeof R[k] === 'boolean' ? (R[k] ? 'Yes' : 'No') : R[k])}">${hint ? `<small>${hint}</small>` : ''}</label>`;
+    const pf = (k, label, wide) => `<label class="fld ${wide ? 'wide' : ''}" for="p_${k}"><span>${h(label)}</span><input id="p_${k}" data-p="${k}" value="${h(p[k] || '')}"></label>`;
+    return `<div class="case"><div class="case-head"><div><h1>Settings</h1><p class="sub">Keep these the same as the Settings sheet in the Excel workbook so both give the same values.</p></div></div>
+      ${group('Valuer (printed on the summary)', pf('name', 'Name') + pf('qual', 'Qualification') + pf('reg', 'Registration no.') + pf('firm', 'Firm') + pf('addr', 'Address', true) + pf('phone', 'Phone') + pf('email', 'Email'))}
+      ${group('Valuation rules', rf('rv', 'Realizable value', 'fraction', '0.90 = 90%') + rf('fsv', 'Forced sale value', 'fraction') + rf('life', 'Building life', 'years') + rf('salv', 'Salvage value', 'fraction') + rf('rnd', 'Round values to', 'Rs') + rf('f1', 'First floor rate factor', '× ground') + rf('f2', 'Each higher floor factor', '× floor below') + rf('sbua', 'Super built-up factor', '× built-up') + rf('carp', 'Carpet factor', '× built-up') + rf('ladj', 'Adopted land rate in Canara & CBDT formats', '× prevailing') + rf('esc', 'Price escalation for sale instances', '% a year') + rf('fsiMax', 'FSI warning above', ''))}
+      ${group('Photos', rf('photoKB', 'Maximum size per photo', 'KB') + rf('photoPx', 'Longest side', 'pixels') + rf('autofix', 'Auto brightness and contrast', 'Yes/No') + rf('stamp', 'Print reference, date and location on photo', 'Yes/No'))}
+      <section class="grp"><h3>Backup</h3><p class="note">${Store.mode === 'cloud' ? 'Cases are saved in your Claude account.' : 'Cases are saved in this browser only. Keep a backup.'} Keep a full backup on your computer or Google Drive from time to time. Restoring never overwrites a newer copy of a case.</p>
+      <button class="btn" data-act="backup">Backup without photos</button> <button class="btn" data-act="backup-full">Full backup with photos</button> <label class="btn" for="restore_in">Restore from backup</label><input id="restore_in" type="file" accept=".json,application/json" hidden> <span class="busy">${h(st.outmsg || '')}</span></section></div>`;
+  }
+
+  /* ---------------- live panel ---------------- */
+  function paintLive() {
+    const el = $('#live'); if (!el) return;
+    const c = cur();
+    if (st.view !== 'case' || !c) { el.hidden = true; document.body.classList.remove('has-live'); return; }
+    el.hidden = false; document.body.classList.add('has-live');
+    const S = rules(), r = VS.compute(c, S), ch = VS.checks(c, r, S), F = r.fmt;
+    const base = F.uc ? r.fmvNow : r.fmv;
+    const nE = ch.filter(x => x.sev === 'error').length, nW = ch.filter(x => x.sev === 'warn').length;
+    el.innerHTML = `<div class="live-in"><span class="lbl">${F.uc ? 'Value as on date' : 'Fair market value'}</span><b class="fmv">${VS.rs(base)}</b>
+      <dl><dt>Realizable</dt><dd>${VS.rs(r.rv)}</dd><dt>Forced sale</dt><dd>${VS.rs(r.fsv)}</dd><dt>Guideline</dt><dd>${r.gv === null ? '–' : VS.rs(r.gv)}</dd>${F.uc ? `<dt>On completion</dt><dd>${VS.rs(r.fmv)}</dd>` : ''}</dl>
+      <button class="live-checks" data-tab="checks">${nE ? `<i class="red">${nE} to fix</i>` : ''}${nW ? `<i class="amb">${nW} to review</i>` : ''}${!nE && !nW ? '<i class="grn">All checks passed</i>' : ''}</button>
+      <span class="lbl sheet">Report sheet ${h(F.sheet)}</span></div>`;
+  }
+
+  /* ---------------- events ---------------- */
+  function onField(e) {
+    const t = e.target, c = cur();
+    if (t.dataset.r) {
+      const S = st.settings; S.rules = S.rules || {}; let v = t.value.trim();
+      if (['autofix', 'stamp'].includes(t.dataset.r)) v = /^y/i.test(v); else v = v === '' ? VS.DEFAULT_RULES[t.dataset.r] : VS.num(v);
+      S.rules[t.dataset.r] = v; Store.putSettings(S); return;
+    }
+    if (t.dataset.p) { const S = st.settings; S.profile = S.profile || {}; S.profile[t.dataset.p] = t.value; Store.putSettings(S); return; }
+    if (!t.dataset.k || !c) return;
+    let v = t.value; if (t.dataset.num && v !== '') { const n = VS.num(v); v = (String(n) === v.replace(/,/g, '').trim() || /^[\d.,\s-]+$/.test(v)) ? n : v; }
+    set(c, t.dataset.k, v);
+    if (t.dataset.k === 'status' && v === 'Delivered' && !c.delivered) c.delivered = todayISO();
+    touch(c);
+    const structural = ['ptype', 'cstatus', 'bank', 'fmtOverride', 'status', 'f.upper_floors', 'f.gf_area', 'f.gf_rate'].includes(t.dataset.k) || /^comps\./.test(t.dataset.k) || t.dataset.k.startsWith('f.dim') || /_area$/.test(t.dataset.k);
+    if (e.type === 'change' && structural) { const pos = t.id; render(); const n = pos && document.getElementById(pos); if (n && n.tagName !== 'SELECT') n.focus(); }
+    else paintLive();
+  }
+
+  async function onClick(e) {
+    const b = e.target.closest('button,[data-open]'); if (!b) return;
+    const c = cur(), S = rules();
+    if (b.dataset.nav) { st.view = b.dataset.nav; st.confirm = null; render(); window.scrollTo(0, 0); return; }
+    if (b.dataset.open) { st.caseId = b.dataset.open; st.view = 'case'; st.tab = 'assignment'; render(); window.scrollTo(0, 0); return; }
+    if (b.dataset.tab) { st.tab = b.dataset.tab; st.view = 'case'; st.outmsg = ''; render(); window.scrollTo(0, 0); return; }
+    if (b.dataset.filter) { st.filter = b.dataset.filter; render(); return; }
+    const a = b.dataset.act; if (!a) return;
+    if (a === 'new') { const n = newCase(); st.cases.push(n); st.caseId = n.id; st.view = 'case'; st.tab = 'assignment'; touch(n); render(); return; }
+    if (a === 'dup') { const n = JSON.parse(JSON.stringify(c)); Object.assign(n, { id: uid(), ref: newCase().ref, status: 'Assigned', photos: [], created: new Date().toISOString(), example: false, delivered: '', fee: '', feeReceived: '', billNo: '' }); st.cases.push(n); st.caseId = n.id; touch(n); render(); return; }
+    if (a === 'del') { st.confirm = 'del'; render(); return; }
+    if (a === 'del-no') { st.confirm = null; render(); return; }
+    if (a === 'del-yes') { for (const p of c.photos || []) await Store.deletePhoto(p); await Store.del(c.id); st.cases = st.cases.filter(x => x.id !== c.id); st.caseId = null; st.view = 'register'; st.confirm = null; render(); return; }
+    if (a === 'use-dim') { c.f.extent = +(VS.num(c.f.dimN) * VS.num(c.f.dimE)).toFixed(2); touch(c); render(); return; }
+    if (a === 'geo-from-photo') { const p = (c.photos || []).find(p => p.lat); if (p) { c.lat = (+p.lat).toFixed(6); c.lon = (+p.lon).toFixed(6); touch(c); render(); } return; }
+    if (a === 'comp-add') { c.comps = c.comps || []; c.comps.push({ date: '', loc: '', area: '', unit: 'sqft', price: '', src: '', adjLoc: 0, adjSize: 0, adjOther: 0 }); touch(c); render(); return; }
+    if (a === 'comp-del') { c.comps.splice(+b.dataset.i, 1); touch(c); render(); return; }
+    if (a === 'use-comp') { const cs = VS.comps(c, S); if (cs.suggested) { c.f[r_target(c)] = cs.suggested; touch(c); render(); } return; }
+    if (a === 'ph-del') { const p = c.photos.splice(+b.dataset.i, 1)[0]; await Store.deletePhoto(p); touch(c); render(); return; }
+    if (a === 'ph-up' || a === 'ph-dn') { const i = +b.dataset.i, j = a === 'ph-up' ? i - 1 : i + 1; [c.photos[i], c.photos[j]] = [c.photos[j], c.photos[i]]; touch(c); render(); return; }
+    if (a === 'dl-excel') { const r = VS.compute(c, S); const ex = VS.excelFile(c, r, SPEC); await doSave(`${safe(c.ref)} - ${safe(c.f.owner || 'case')} - Excel.txt`, ex.text); return; }
+    if (a === 'dl-photos') { st.outmsg = 'Preparing photos…'; paintOut(); const files = []; let i = 0; for (const p of c.photos) { i++; const bl = await Store.photoBlob(p); files.push({ name: `${String(i).padStart(2, '0')} - ${safe(p.caption || 'photo')}.jpg`, data: new Uint8Array(await bl.arrayBuffer()) }); } await doSave(`${safe(c.ref)} - photos.zip`, VS.zip(files)); return; }
+    if (a === 'dl-summary') { st.outmsg = 'Preparing summary…'; paintOut(); const html = await VS.summaryHTML(c, S, st.settings || {}); await doSave(`${safe(c.ref)} - ${safe(c.f.owner || 'case')} - summary.html`, html); return; }
+    if (a === 'xfer') { st.outmsg = 'Preparing case file…'; render(); const data = JSON.stringify({ app: 'Valuation Studio', kind: 'case', version: 1, saved: new Date().toISOString(), cases: await packCases([c], true) }); st.outmsg = ''; await doSave(`${safe(c.ref)} - ${safe(c.f.owner || 'case')} - case file.json`, data); render(); return; }
+    if (a === 'backup-full') { st.outmsg = 'Preparing full backup…'; render(); const data = JSON.stringify({ app: 'Valuation Studio', version: 1, saved: new Date().toISOString(), settings: st.settings, cases: await packCases(st.cases, true) }); await doSave(`Valuation Studio full backup ${todayISO()}.json`, data); render(); return; }
+    if (a === 'backup') { const data = JSON.stringify({ app: 'Valuation Studio', version: 1, saved: new Date().toISOString(), settings: st.settings, cases: st.cases.map(x => Object.assign({}, x, { photos: (x.photos || []).map(p => Object.assign({}, p, { url: undefined })) })) }, null, 1); await doSave(`Valuation Studio backup ${todayISO()}.json`, data); render(); return; }
+    if (a === 'ai-remarks') { await aiRemarks(c, S); return; }
+  }
+  const r_target = c => VS.format(c).isFlat ? 'comp_rate' : 'adopted';
+  const safe = s => String(s || '').replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60) || 'file';
+  function paintOut() { const el = $('#outmsg') || document.querySelector('.busy'); if (el) el.textContent = st.outmsg || ''; }
+  async function doSave(name, data) {
+    try { const r = await Store.save(name, data); st.outmsg = r === 'declined' ? 'Download cancelled.' : `Saved “${name}”.`; }
+    catch (e) { st.outmsg = 'Could not download: ' + e.message; }
+    paintOut();
+  }
+  async function aiRemarks(c, S) {
+    const r = VS.compute(c, S), F = r.fmt; st.busy = 'ai'; render();
+    const facts = { property_type: c.ptype, construction_status: c.cstatus, bank: c.bank, fields: c.f, valuation: { fair_market_value: F.uc ? r.fmvNow : r.fmv, after_completion: F.uc ? r.fmv : undefined, realizable: r.rv, forced_sale: r.fsv, guideline: r.gv, land_value: r.land, building_value: r.bldg, age_years: r.age }, sale_instances: VS.comps(c, S) };
+    try {
+      const out = await Store.sample(`You are drafting two short paragraphs for an Indian bank valuation report written by a registered valuer.
+Paragraph 1: the approach to valuation (land and building method or composite rate method for flats, market approach, how the land/composite rate was arrived at from the sale instances and enquiries, depreciation on straight-line basis).
+Paragraph 2: the locality and the property (surroundings, road, amenities, marketability).
+Use ONLY the facts in the JSON below; where a fact is missing, leave it out rather than inventing it. Write in plain formal English, third person, no headings, no bullet points, under 180 words in total. Amounts in Indian format with "Rs".
+FACTS:
+${JSON.stringify(facts)}`, { modelTier: 'default', cache: false });
+      c.remarks = (out.text || '').trim(); touch(c);
+    } catch (e) { st.outmsg = e && e.code === 'not_granted' ? 'Drafting with Claude is turned off for this page.' : 'Drafting did not work this time: ' + (e.message || e.code); }
+    st.busy = ''; render();
+  }
+
+  function onFiles(e) {
+    const t = e.target;
+    if (t.id === 'ph_in' || t.id === 'ph_cam') { if (t.files.length) addPhotos(t.files); t.value = ''; }
+    if ((t.id === 'restore_in' || t.id === 'casefile_in') && t.files[0]) { restore(t.files[0]); t.value = ''; }
+  }
+  async function packCases(list, withPhotos) {
+    const out = [];
+    for (const c of list) {
+      const cc = JSON.parse(JSON.stringify(c));
+      cc.photos = [];
+      for (const p of c.photos || []) {
+        const q = Object.assign({}, p, { url: undefined });
+        if (withPhotos) { try { const b = await Store.photoBlob(p); if (b) q.data = await VS.blobToDataURL(b); } catch (e) { } }
+        cc.photos.push(q);
+      }
+      out.push(cc);
+    }
+    return out;
+  }
+  async function restore(file) {
+    try {
+      const j = JSON.parse(await file.text()); if (!j || !Array.isArray(j.cases)) throw new Error('This is not a Valuation Studio file.');
+      let added = 0, updated = 0, kept = 0;
+      for (const c of j.cases) {
+        const have = st.cases.find(x => x.id === c.id);
+        if (have && (have.updated || '') >= (c.updated || '')) { kept++; continue; }
+        for (const p of c.photos || []) {
+          if (p.data) { const b = await (await fetch(p.data)).blob(); Object.assign(p, await Store.savePhoto(b)); delete p.data; }
+        }
+        const upd = c.updated;
+        if (have) { st.cases[st.cases.indexOf(have)] = c; updated++; } else { st.cases.push(c); added++; }
+        await Store.put(c); c.updated = upd || c.updated;
+      }
+      if (j.settings && !(st.settings.profile && st.settings.profile.name)) { st.settings = Object.assign(st.settings, j.settings); await Store.putSettings(st.settings); }
+      st.outmsg = `${added} case(s) added, ${updated} updated` + (kept ? `, ${kept} already up to date here.` : '.');
+    } catch (e) { st.outmsg = 'Could not open the file: ' + e.message; }
+    render();
+  }
+
+  /* ---------------- boot ---------------- */
+  async function boot() {
+    document.addEventListener('input', e => { if (e.target.id === 'q') { st.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); return; } if (e.target.type !== 'file') onField(e); });
+    document.addEventListener('change', e => { if (e.target.type === 'file') onFiles(e); else onField(e); });
+    document.addEventListener('click', onClick);
+    $('#view').innerHTML = `<div class="empty"><b>Loading your cases…</b></div>`;
+    const timer = setTimeout(() => { if (!st.loaded) { $('#view').innerHTML = `<div class="empty"><b>Your saved cases are taking long to load.</b><p>Check the connection and open the page again.</p></div>`; } }, 10000);
+    await Store.init();
+    try {
+      st.cases = await Store.list();
+      st.settings = (await Store.getSettings()) || { rules: {}, profile: {} };
+      if (!st.settings.seeded && !st.cases.length) { const ex = exampleCase(); st.cases.push(ex); await Store.put(ex); st.settings.seeded = true; await Store.putSettings(st.settings); }
+    } catch (e) { st.cases = []; st.settings = { rules: {}, profile: {} }; st.saving = 'Could not load saved cases: ' + e.message; }
+    st.loaded = true; clearTimeout(timer);
+    st.saving = Store.mode === 'cloud' ? 'Saved to your account' : 'Saved on this device';
+    render();
+  }
+  VS.boot = boot;
+})();
+</script>
+<script>VS.boot();</script>
+<script>
+(function(){
+  window.VS_VERSION='202611050834';
+  const bar=document.createElement('span');bar.id='pwabar';
+  const top=document.querySelector('.top');top.insertBefore(bar,document.getElementById('savestate'));
+  let deferred=null;
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;show();});
+  function show(){bar.innerHTML='';
+    if(deferred){const b=document.createElement('button');b.className='btn primary';b.textContent='Install app';b.onclick=async()=>{deferred.prompt();await deferred.userChoice;deferred=null;show();};bar.appendChild(b);}
+    if(window._vsWaiting){const u=document.createElement('button');u.className='btn';u.textContent='Update ready – reload';u.onclick=()=>window._vsWaiting.postMessage('skip');bar.appendChild(u);}
+    const o=document.createElement('span');o.style.cssText='font-size:12px;color:var(--muted)';o.textContent=navigator.onLine?'':'Offline';bar.appendChild(o);}
+  window.addEventListener('online',show);window.addEventListener('offline',show);show();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      const watch=w=>{if(!w)return;w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){window._vsWaiting=w;show();}});};
+      if(reg.waiting&&navigator.serviceWorker.controller){window._vsWaiting=reg.waiting;show();}
+      reg.addEventListener('updatefound',()=>watch(reg.installing));
+      setInterval(()=>reg.update().catch(()=>{}),3600e3);
+    }).catch(()=>{});
+    let reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!reloaded){reloaded=true;location.reload();}});
+  }
+})();
+</script>
+</body></html>
